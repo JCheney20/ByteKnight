@@ -1,23 +1,15 @@
 #include "defs.h"
 #include "stdio.h"
+#include "debug.h"
 
 int main(){
-  int i = 0;
   AllInit();
 
+  U64 playBitBoard = 0ULL;
 
-  for (i=0;i<BRD_SQ_NUM; ++i) {
-    if(i%10 == 0) printf("\n");
-    printf("%5d", SQ120toSQ64[i]);
-  }
-
-  printf("\n");
-  printf("\n");
-  for (i=0; i<64; ++i) {
-    if(i%8 == 0) printf("\n");
-    printf("%5d", SQ64toSQ120[i]);
-  }
-  
+  playBitBoard |= (1ULL << SQ64(D2));
+  playBitBoard |= (1ULL << SQ64(D3));
+  playBitBoard |= (1ULL << SQ64(D4));
 
 
   return 0;

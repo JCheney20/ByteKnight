@@ -2,20 +2,6 @@
 #define DEFS_H
 
 #include "stdlib.h"
-#define DEBUG
-
-#ifndef DEBUG
-#define ASSERT(n)
-#else
-#define ASSERT(n) \
-if(!(n)) { \
-printf("%s - Failed",#n); \
-printf("On %s",__DATE__); \
-printf("At %s ",__TIME__); \
-printf("In File %s",__FILE__); \
-printf("At Line %d\n",__LINE__); \
-exit(1);}
-#endif // !DEBUG
 
 typedef unsigned long long U64;
 
@@ -88,6 +74,8 @@ typedef struct {
 
 // MACROS
 #define FR2SQ(f,r) ( (21 + (f)) + ((r) * 10))
+#define SQ64(sq120) SQ120toSQ64[sq120]
+#define CR printf("\n")
 
 // GLOBALS
 extern int SQ120toSQ64[BRD_SQ_NUM];
@@ -95,7 +83,11 @@ extern int SQ64toSQ120[64];
 
 
 // FUNCTIONS
+// init.c
 extern void AllInit();
+
+//bitboards.c
+extern void PrintBitBoard(U64 bb);
 
 
 #endif // !DEFS_H
