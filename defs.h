@@ -76,10 +76,24 @@ typedef struct {
 #define FR2SQ(f,r) ( (21 + (f)) + ((r) * 10))
 #define SQ64(sq120) SQ120toSQ64[sq120]
 #define CR printf("\n")
+#define POP(b) PopBit(b)
+#define CNT(b) CountBits(b)
+#define CLRBIT(bb, sq) ((bb) &= ClearMask[(sq)])
+#define SETBIT(bb, sq) ((bb) |= SetMask[(sq)])
+#define RAND_64 ((U64) rand() + \
+                 (U64) rand() << 15 + \
+                 (U64) rand() << 30 + \
+                 (U64) rand() << 45 + \
+                 (U64) rand()  & 0xf << 60)
 
 // GLOBALS
 extern int SQ120toSQ64[BRD_SQ_NUM];
 extern int SQ64toSQ120[64];
+extern U64 SetMask[64];
+extern U64 ClearMask[64];
+extern U64 PieceKeys [13][120];
+extern U64 SideKey;
+extern U64 CastleKeys[16];
 
 
 // FUNCTIONS
@@ -88,6 +102,10 @@ extern void AllInit();
 
 //bitboards.c
 extern void PrintBitBoard(U64 bb);
+extern int CountBits(U64 b); 
+extern int PopBit(U64 *bb);
 
+//hashkeys.c
+extern U64 GeneratePosKey(const S_BOARD *pos);
 
 #endif // !DEFS_H
