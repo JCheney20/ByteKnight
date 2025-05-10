@@ -10,6 +10,8 @@ typedef unsigned long long U64;
 
 #define MAXGAMEMOVES 2048
 
+#define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
 enum PIECES {EMPTY, wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK};
 enum FILES {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE_NONE};
 enum RANKS {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_NONE};
@@ -27,7 +29,7 @@ enum SQRS {
   A8 = 91, B8, C8, D8, E8, F8, G8, H8, NO_SQ
 };
 
-enum TF {TRUE, FALSE};
+enum TF {FALSE, TRUE};
 
 enum CASTLING {WKCA = 1, WQCA = 2, BKCA = 4, BQCA = 8};
 
@@ -60,9 +62,10 @@ typedef struct {
   U64 posKey; //Unique pos key for identification
 
   int pceNum[13];
-  int bigPce[3];
-  int majPce[3];
-  int minPce[3];
+  int bigPce[2];
+  int majPce[2];
+  int minPce[2];
+  int material[2];
 
   S_UNDO history[MAXGAMEMOVES];
 
@@ -75,16 +78,17 @@ typedef struct {
 // MACROS
 #define FR2SQ(f,r) ( (21 + (f)) + ((r) * 10))
 #define SQ64(sq120) SQ120toSQ64[sq120]
+#define SQ120(sq64) SQ64toSQ120[sq64]
 #define CR printf("\n")
 #define POP(b) PopBit(b)
 #define CNT(b) CountBits(b)
 #define CLRBIT(bb, sq) ((bb) &= ClearMask[(sq)])
 #define SETBIT(bb, sq) ((bb) |= SetMask[(sq)])
-#define RAND_64 ((U64) rand() + \
-                 (U64) rand() << 15 + \
-                 (U64) rand() << 30 + \
-                 (U64) rand() << 45 + \
-                 (U64) rand()  & 0xf << 60)
+#define RAND_64 ((U64) rand() | \
+                 (U64) rand() << 15 | \
+                 (U64) rand() << 30 | \
+                 (U64) rand() << 45 | \
+                 ((U64) rand()  & 0xf) << 60)
 
 // GLOBALS
 extern int SQ120toSQ64[BRD_SQ_NUM];
@@ -95,6 +99,19 @@ extern U64 PieceKeys [13][120];
 extern U64 SideKey;
 extern U64 CastleKeys[16];
 
+extern char PceChar[];
+extern char SideChar[];
+extern char RankChar[];
+extern char FileChar[];
+
+extern int PieceBig[13];
+extern int PieceMaj[13];
+extern int PieceMin[13];
+extern int PieceVal[13];
+extern int PieceCol[13];
+
+extern int FilesBrd[BRD_SQ_NUM];
+extern int RanksBrd[BRD_SQ_NUM];
 
 // FUNCTIONS
 // init.c
@@ -107,5 +124,12 @@ extern int PopBit(U64 *bb);
 
 //hashkeys.c
 extern U64 GeneratePosKey(const S_BOARD *pos);
+
+//board.c
+extern void ResetBoard(S_BOARD *pos);
+extern int ParseFen(char *fen, S_BOARD *pos);
+extern void PrintBoard(const S_BOARD *pos);
+extern void UpdateListMaterial(S_BOARD *pos);
+extern int CheckBrd(const S_BOARD *pos);
 
 #endif // !DEFS_H

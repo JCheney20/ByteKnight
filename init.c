@@ -1,5 +1,6 @@
 #include "defs.h"
 #include "stdlib.h"
+#include <stdio.h>
 
 int SQ120toSQ64[BRD_SQ_NUM];
 int SQ64toSQ120[64];
@@ -10,6 +11,30 @@ U64 ClearMask[64];
 U64 PieceKeys [13][120];
 U64 SideKey;
 U64 CastleKeys[16];
+
+int FilesBrd[BRD_SQ_NUM];
+int RanksBrd[BRD_SQ_NUM];
+
+void InitFilesRanksBrd(){
+  int i = 0;
+  int file = FILE_A;
+  int rank = RANK_1;
+  int sq = A1;
+  int sq64 = 0;
+
+  for (i=0; i<BRD_SQ_NUM;++i) {
+    FilesBrd[i] = NO_SQ;
+    RanksBrd[i] = NO_SQ;
+  }
+
+  for (rank = RANK_1; rank <=RANK_8; ++rank) {
+    for (file = FILE_A; file <= FILE_H; ++file) {
+      sq = FR2SQ(file, rank);
+      FilesBrd[sq] = file;
+      RanksBrd[sq] = rank;
+    }
+  }
+}
 
 void InitHashKeys(){
   int i = 0;
@@ -70,5 +95,5 @@ void AllInit(){
   InitSQ120to64();
   InitBitMasks();
   InitHashKeys();
-
+  InitFilesRanksBrd();
 }

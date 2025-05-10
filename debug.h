@@ -6,11 +6,11 @@
 #else
 #define ASSERT(n) \
 if(!(n)) { \
-printf("%s - Failed",#n); \
-printf("On %s",__DATE__); \
-printf("At %s ",__TIME__); \
-printf("In File %s",__FILE__); \
-printf("At Line %d\n",__LINE__); \
+printf("%s - Failed ",#n); \
+printf("on %s ",__DATE__); \
+printf("@ %s ",__TIME__); \
+printf("in File %s ",__FILE__); \
+printf("on Line %d\n",__LINE__); \
 exit(1);}
 #endif // !DEBUG
 
