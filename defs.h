@@ -89,6 +89,10 @@ typedef struct {
                  (U64) rand() << 30 | \
                  (U64) rand() << 45 | \
                  ((U64) rand()  & 0xf) << 60)
+#define isBQ(p) (PieceBishopQueen[p])
+#define isRQ(p) (PieceRookQueen[p])
+#define isKn(p) (PieceKnight[p])
+#define isKi(p) (PieceKing[p])
 
 // GLOBALS
 extern int SQ120toSQ64[BRD_SQ_NUM];
@@ -109,6 +113,11 @@ extern int PieceMaj[13];
 extern int PieceMin[13];
 extern int PieceVal[13];
 extern int PieceCol[13];
+
+extern int PieceKnight[13];
+extern int PieceKing[13];
+extern int PieceBishopQueen[13];
+extern int PieceRookQueen[13];
 
 extern int FilesBrd[BRD_SQ_NUM];
 extern int RanksBrd[BRD_SQ_NUM];
@@ -131,5 +140,8 @@ extern int ParseFen(char *fen, S_BOARD *pos);
 extern void PrintBoard(const S_BOARD *pos);
 extern void UpdateListMaterial(S_BOARD *pos);
 extern int CheckBrd(const S_BOARD *pos);
+
+//attacks.c
+extern int SqAttacked(const int sq, const int side, const S_BOARD *pos);
 
 #endif // !DEFS_H
