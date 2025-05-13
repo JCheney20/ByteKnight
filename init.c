@@ -20,7 +20,6 @@ void InitFilesRanksBrd(){
   int file = FILE_A;
   int rank = RANK_1;
   int sq = A1;
-  int sq64 = 0;
 
   for (i=0; i<BRD_SQ_NUM;++i) {
     FilesBrd[i] = NO_SQ;
@@ -37,8 +36,7 @@ void InitFilesRanksBrd(){
 }
 
 void InitHashKeys(){
-  int i = 0;
-  int j = 0;
+  int i, j;
   for (i=0; i<13; ++i) {
     for (j=0;j<120;++j) {
       PieceKeys[i][j] = RAND_64;

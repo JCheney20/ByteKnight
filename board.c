@@ -3,7 +3,7 @@
 #include "debug.h"
 
 void ResetBoard(S_BOARD *pos){
-  int i=0;
+  int i;
 
   for (i = 0; i<BRD_SQ_NUM; ++i) {
     pos->pieces[i] = NO_SQ;
@@ -47,7 +47,7 @@ int ParseFen(char* fen, S_BOARD *pos){
 
   int rank = RANK_8;
   int file = FILE_A;
-  int piece, count, i, sq64, sq120 = 0;
+  int piece, count, i, sq64, sq120;
 
   ResetBoard(pos);
 
@@ -214,7 +214,6 @@ int CheckBrd(const S_BOARD *pos){
   int t_material[2] = { 0, 0};
 
   int sq64, t_piece, t_pce_num, sq120, colour, pcount;
-
   U64 t_pawns[3] = {0ULL, 0ULL, 0ULL};
 
   t_pawns[WHITE] = pos->pawns[WHITE];

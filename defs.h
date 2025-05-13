@@ -9,6 +9,7 @@ typedef unsigned long long U64;
 #define BRD_SQ_NUM 120
 
 #define MAXGAMEMOVES 2048
+#define MAXPOSITIONMOVES 256
 
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -32,6 +33,16 @@ enum SQRS {
 enum TF {FALSE, TRUE};
 
 enum CASTLING {WKCA = 1, WQCA = 2, BKCA = 4, BQCA = 8};
+
+typedef struct{
+  int mv;
+  int score;
+} S_MOVE ;
+
+typedef struct {
+  S_MOVE mv[MAXPOSITIONMOVES];
+  int count;
+} S_MOVELIST ;
 
 typedef struct{
   
@@ -75,6 +86,7 @@ typedef struct {
   
 } S_BOARD; 
 
+
 // MACROS
 #define FR2SQ(f,r) ( (21 + (f)) + ((r) * 10))
 #define SQ64(sq120) SQ120toSQ64[sq120]
@@ -93,6 +105,28 @@ typedef struct {
 #define isRQ(p) (PieceRookQueen[p])
 #define isKn(p) (PieceKnight[p])
 #define isKi(p) (PieceKing[p])
+
+/* GAME MOVES
+* 0000 0000 0000 0000 0000 0111 1111 -> From {0x7F}
+* 0000 0000 0000 0011 1111 1000 0000 -> To { >> 7 0x7F}
+* 0000 0000 0011 1100 0000 0000 0000 -> Capture {>> 14 0xF}
+* 0000 0000 0100 0000 0000 0000 0000 -> EP {0x40000}
+* 0000 0000 1000 0000 0000 0000 0000 -> Pawn Start {0x80000}
+* 0000 1111 0000 0000 0000 0000 0000 -> Promoted Piece {>> 20 0xF}
+* 0001 0000 0000 0000 0000 0000 0000 -> Castle {0x1000000}
+*/
+
+#define FROMSQ(m) ((m) & 0x7F)
+#define TOSQ(m) (((m)>>7) & 0x7F)
+#define CAPTURED(m) (((m)>>14) & 0xF)
+#define PROMOTED(m) (((m)>>20) & 0xF)
+
+#define EP_FLAG 0x40000
+#define PAWN_START_FLAG 0x80000
+#define CASTLE_FLAG 0x1000000
+#define CAP_FLAG 0x7C000
+#define PROM_FLAG 0xF00000
+
 
 // GLOBALS
 extern int SQ120toSQ64[BRD_SQ_NUM];
@@ -118,6 +152,7 @@ extern int PieceKnight[13];
 extern int PieceKing[13];
 extern int PieceBishopQueen[13];
 extern int PieceRookQueen[13];
+extern int PieceSlides[13];
 
 extern int FilesBrd[BRD_SQ_NUM];
 extern int RanksBrd[BRD_SQ_NUM];
@@ -143,5 +178,20 @@ extern int CheckBrd(const S_BOARD *pos);
 
 //attacks.c
 extern int SqAttacked(const int sq, const int side, const S_BOARD *pos);
+
+//io.c
+extern char *PrSq(const int sq);
+extern char *PrMv(const int mv);
+extern void PrintMvList(const S_MOVELIST *list);
+
+//validate.c
+extern int SqOnBoard(const int sq);
+extern int SideValid(const int side);
+extern int FileRankValid(const int fr);
+extern int PieceValidEmpty(const int pce);
+extern int PieceValid(const int pce);
+
+//mvgen.c
+extern void GenerateAllMvs(const S_BOARD *pos, S_MOVELIST *list);
 
 #endif // !DEFS_H
