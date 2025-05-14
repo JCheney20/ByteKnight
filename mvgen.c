@@ -41,13 +41,6 @@ int LoopSlideIndex[2] = {0, 4};
 int LoopNonSlideIndex[2] = {0, 3};
 int LoopBigIndex[2] = {0, 5};
 
-//Pawn Arrays
-int PromRank[2] = {RANK_7, RANK_2};
-int StRank[2] = {RANK_2, RANK_7};
-int Pawn[2] = {wP, bP};
-int dir[2] = {1, -1};
-
-
 void AddQuietMv( const S_BOARD *pos, int mv, S_MOVELIST *list){
   list->mv[list->count].mv = mv;
   list->mv[list->count].score = 0;
@@ -70,9 +63,12 @@ void AddPawnMv( const S_BOARD *pos, const int from, const int to, const int cap,
   ASSERT(SqOnBoard(from));
   ASSERT(SqOnBoard(to));
   int count = LoopBigIndex[side];
+  int DIR = side == WHITE? 1:-1;
+  int PROM = side == WHITE? RANK_7:RANK_2;
+  int ST_RANK = side == BLACK? RANK_7:RANK_2;
 
   if (FilesBrd[from] == FilesBrd[to]) {
-    if (RanksBrd[from] == PromRank[side] ) {
+    if (RanksBrd[from] == PROM ) {
       while (LoopBigPce[count] != 0) {
         AddQuietMv(pos, MOVE(from, to, EMPTY, (LoopBigPce[count++]), 0), list);
       }
@@ -80,7 +76,7 @@ void AddPawnMv( const S_BOARD *pos, const int from, const int to, const int cap,
       AddQuietMv(pos, MOVE(from, to, EMPTY, EMPTY, 0), list);
     }
   } else {
-    if (RanksBrd[from] == PromRank[side] ) {
+    if (RanksBrd[from] == PROM ) {
       count = LoopBigIndex[side];
       ASSERT(PieceValidEmpty(cap));
       while (LoopBigPce[count] != 0) {
@@ -95,128 +91,109 @@ void AddPawnMv( const S_BOARD *pos, const int from, const int to, const int cap,
 void GenerateAllMvs(const S_BOARD *pos, S_MOVELIST *list){
   ASSERT(CheckBrd(pos));
 
-  list->count = 0;
+	list->count = 0;
 
-  int pce = EMPTY;
-  int side = pos->side;
-  int sq = 0; int t_sq = 0;
-  int pceNum = 0;
-  int Dir = 0;
-  int i = 0;
-  int pceIndex = 0;
+	int pce = EMPTY;
+	int side = pos->side;
+	int sq = 0; int t_sq = 0;
+	int pceNum = 0;
+	int dir = 0;
+	int index = 0;
+	int pceIndex = 0;
 
+	if(side == WHITE) {
 
-  printf("\n\nSide:%d\n", side);
+		for(pceNum = 0; pceNum < pos->pceNum[wP]; ++pceNum) {
+			sq = pos->pList[wP][pceNum];
+			ASSERT(SqOnBoard(sq));
 
-  for (pceNum = 0; pceNum < pos->pceNum[Pawn[side]]; ++pceNum) {
-    sq = pos->pList[Pawn[side]][pceNum];
-    ASSERT(SqOnBoard(sq));
+			if(pos->pieces[sq + 10] == EMPTY) {
+				AddPawnMv(pos, sq, sq+10, EMPTY, list, side);
+				if(RanksBrd[sq] == RANK_2 && pos->pieces[sq + 20] == EMPTY) {
+					AddQuietMv(pos, MOVE(sq,(sq+20),EMPTY,EMPTY,PAWN_START_FLAG),list);
+				}
+			}
 
-    if (pos->pieces[sq + (10 * DIR_S)] == EMPTY) {
-      AddPawnMv(pos, sq, sq+(10 * DIR_S), EMPTY, list, side);
-      if (RanksBrd[sq] == StRank[side] && pos->pieces[sq + (20 * DIR_S)] == EMPTY) {
-        AddQuietMv(pos, MOVE(sq, (sq+(20 * DIR_S)), EMPTY, EMPTY, PAWN_START_FLAG), list );
-      }
-    }
+			if(!SQOFFBOARD(sq + 9) && PieceCol[pos->pieces[sq + 9]] == BLACK) {
+				AddPawnMv(pos, sq, sq+9, pos->pieces[sq + 9], list, side);
+			}
 
-    if (!SQOFFBOARD(sq + (9*DIR_S)) && PieceCol[pos->pieces[sq + (9*DIR_S) ]] == (side^1)) {
-      AddPawnMv(pos, sq, sq+(9*DIR_S), pos->pieces[sq +(9*DIR_S) ], list, side);
-    }
+			if(!SQOFFBOARD(sq + 11) && PieceCol[pos->pieces[sq + 11]] == BLACK) {
+				AddPawnMv(pos, sq, sq+11, pos->pieces[sq + 11], list, side);
+			}
 
-    if (sq + (9*DIR_S) == pos->enPas) {
-      AddCaptureMv(pos, MOVE(sq, sq + (9*DIR_S), EMPTY, EMPTY, EP_FLAG), list);
-    }
-    
-    if (!SQOFFBOARD(sq + (11*DIR_S)) && PieceCol[pos->pieces[sq + (11*DIR_S) ]] == (side^1)) {
-      AddPawnMv(pos, sq, sq+(11*DIR_S), pos->pieces[sq +(11*DIR_S) ], list, side);
-    }
+			if(pos->enPas != NO_SQ) {
+				if(sq + 9 == pos->enPas) {
+					AddEpMv(pos, MOVE(sq,sq + 9,EMPTY,EMPTY,EP_FLAG), list);
+				}
+				if(sq + 11 == pos->enPas) {
+					AddEpMv(pos, MOVE(sq,sq + 11,EMPTY,EMPTY,EP_FLAG), list);
+				}
+			}
+		}
 
-    if (sq + (11*DIR_S) == pos->enPas) {
-      AddCaptureMv(pos, MOVE(sq, sq + (11*DIR_S), EMPTY, EMPTY, EP_FLAG), list);
-    }
-  }
+		if(pos->castlePerm & WKCA) {
+			if(pos->pieces[F1] == EMPTY && pos->pieces[G1] == EMPTY) {
+				if(!SqAttacked(E1,BLACK,pos) && !SqAttacked(F1,BLACK,pos) ) {
+					AddQuietMv(pos, MOVE(E1, G1, EMPTY, EMPTY, CASTLE_FLAG), list);
+				}
+			}
+		}
 
-  if (side == WHITE) {
-    if (pos->castlePerm & WKCA) {
-      if (pos->pieces[F1] == EMPTY && pos->pieces[G1] == EMPTY) {
-        if (!SqAttacked(E1, BLACK, pos) && !SqAttacked(F1, BLACK, pos) && !SqAttacked(G1, BLACK, pos)) {
-          AddQuietMv(pos, MOVE(E1, G1, EMPTY, EMPTY, CASTLE_FLAG), list);
-        }
-      }
-    }
-    if (pos->castlePerm & WQCA) {
-      if (pos->pieces[D1] == EMPTY && pos->pieces[C1] == EMPTY && pos->pieces[B1] == EMPTY ) {
-        if (!SqAttacked(E1, BLACK, pos) && !SqAttacked(D1, BLACK, pos) && !SqAttacked(C1, BLACK, pos) ) {
-          AddQuietMv(pos, MOVE(E1, C1, EMPTY, EMPTY, CASTLE_FLAG), list);
-        }
-      }
-    }
-  } else {
-    if (pos->castlePerm & BKCA) {
-      if (pos->pieces[F8] == EMPTY && pos->pieces[G8] == EMPTY) {
-        if (!SqAttacked(E8, WHITE, pos) && !SqAttacked(F8, WHITE, pos) && !SqAttacked(G8, WHITE, pos)) {
-          AddQuietMv(pos, MOVE(E8, G8, EMPTY, EMPTY, CASTLE_FLAG), list);
-        }
-      }
-    }
-    if (pos->castlePerm & BQCA) {
-      if (pos->pieces[D8] == EMPTY && pos->pieces[C8] == EMPTY && pos->pieces[B8] == EMPTY ) {
-        if (!SqAttacked(E8, WHITE, pos) && !SqAttacked(D8, WHITE, pos) && !SqAttacked(C8, WHITE, pos) ) {
-          AddQuietMv(pos, MOVE(E8, C8, EMPTY, EMPTY, CASTLE_FLAG), list);
-        }
-      }
-    }
-  }
+		if(pos->castlePerm & WQCA) {
+			if(pos->pieces[D1] == EMPTY && pos->pieces[C1] == EMPTY && pos->pieces[B1] == EMPTY) {
+				if(!SqAttacked(E1,BLACK,pos) && !SqAttacked(D1,BLACK,pos) ) {
+					AddQuietMv(pos, MOVE(E1, C1, EMPTY, EMPTY, CASTLE_FLAG), list);
+				}
+			}
+		}
 
-  pceIndex = LoopSlideIndex[side];
-  pce = LoopSlidePce[pceIndex++];
-  while (pce != 0) {
-    ASSERT(PieceValid(pce));
-    for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
-      sq = pos->pList[pce][pceNum];
-      ASSERT(SqOnBoard(sq));
-      for (i = 0; i <NumDir[pce]; ++i) {
-        Dir = PceDir[pce][i];
-        t_sq = sq + Dir;
-        while (!SQOFFBOARD(t_sq)) {
-          if (pos->pieces[t_sq] != EMPTY) {
-            if (PieceCol[pos->pieces[t_sq]] == (side^1)) {
-              AddCaptureMv(pos, MOVE(sq, t_sq, pos->pieces[t_sq], EMPTY, 0), list);
-            }
-            break;
-          }
-          AddQuietMv(pos, MOVE(sq, t_sq, EMPTY, EMPTY, 0), list);
-          t_sq +=Dir;
-        }
-      }
-    }
-    pce = LoopSlidePce[pceIndex++];
-  }
+	} else {
 
-  pceIndex = LoopNonSlideIndex[side];
-  pce = LoopNonSlidePce[pceIndex++];
-  while (pce != 0) {
-    ASSERT(PieceValid(pce));
-    for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
-      sq = pos->pList[pce][pceNum];
-      ASSERT(SqOnBoard(sq));
-      for (i = 0; i <NumDir[pce]; ++i) {
-        Dir = PceDir[pce][i];
-        t_sq = sq + Dir;
+		for(pceNum = 0; pceNum < pos->pceNum[bP]; ++pceNum) {
+			sq = pos->pList[bP][pceNum];
+			ASSERT(SqOnBoard(sq));
 
-        if (SQOFFBOARD(t_sq)) {
-          continue;
-        }
+			if(pos->pieces[sq - 10] == EMPTY) {
+				AddPawnMv(pos, sq, sq-10, EMPTY, list, side);
+				if(RanksBrd[sq] == RANK_7 && pos->pieces[sq - 20] == EMPTY) {
+					AddQuietMv(pos, MOVE(sq,(sq-20),EMPTY,EMPTY,PAWN_START_FLAG),list);
+				}
+			}
 
-        if (pos->pieces[t_sq] != EMPTY) {
-          if (PieceCol[pos->pieces[t_sq]] == (side^1)) {
-            AddCaptureMv(pos, MOVE(sq, t_sq, pos->pieces[t_sq], EMPTY, 0), list);
-          }
-          continue;
-        }
-        AddQuietMv(pos, MOVE(sq, t_sq, EMPTY, EMPTY, 0), list);
-      }
-    }
-    pce = LoopNonSlidePce[pceIndex++];
+			if(!SQOFFBOARD(sq - 9) && PieceCol[pos->pieces[sq - 9]] == WHITE) {
+				AddPawnMv(pos, sq, sq-9, pos->pieces[sq - 9], list, side);
+			}
+
+			if(!SQOFFBOARD(sq - 11) && PieceCol[pos->pieces[sq - 11]] == WHITE) {
+				AddPawnMv(pos, sq, sq-11, pos->pieces[sq - 11], list, side);
+			}
+			if(pos->enPas != NO_SQ) {
+				if(sq - 9 == pos->enPas) {
+					AddEpMv(pos, MOVE(sq,sq - 9,EMPTY,EMPTY, EP_FLAG), list);
+				}
+				if(sq - 11 == pos->enPas) {
+					AddEpMv(pos, MOVE(sq,sq - 11,EMPTY,EMPTY,EP_FLAG), list);
+				}
+			}
+		}
+
+		// castling
+		if(pos->castlePerm &  BKCA) {
+			if(pos->pieces[F8] == EMPTY && pos->pieces[G8] == EMPTY) {
+				if(!SqAttacked(E8,WHITE,pos) && !SqAttacked(F8,WHITE,pos) ) {
+					AddQuietMv(pos, MOVE(E8, G8, EMPTY, EMPTY, CASTLE_FLAG), list);
+				}
+			}
+		}
+
+		if(pos->castlePerm &  BQCA) {
+			if(pos->pieces[D8] == EMPTY && pos->pieces[C8] == EMPTY && pos->pieces[B8] == EMPTY) {
+				if(!SqAttacked(E8,WHITE,pos) && !SqAttacked(D8,WHITE,pos) ) {
+					AddQuietMv(pos, MOVE(E8, C8, EMPTY, EMPTY, CASTLE_FLAG), list);
+				}
+			}
+		}
   }
 }
+

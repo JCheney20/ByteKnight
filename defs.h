@@ -148,6 +148,8 @@ extern int PieceMin[13];
 extern int PieceVal[13];
 extern int PieceCol[13];
 
+
+extern int PiecePawn[13];
 extern int PieceKnight[13];
 extern int PieceKing[13];
 extern int PieceBishopQueen[13];
