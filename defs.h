@@ -40,7 +40,7 @@ typedef struct{
 } S_MOVE ;
 
 typedef struct {
-  S_MOVE mv[MAXPOSITIONMOVES];
+  S_MOVE moves[MAXPOSITIONMOVES];
   int count;
 } S_MOVELIST ;
 
@@ -127,6 +127,8 @@ typedef struct {
 #define CAP_FLAG 0x7C000
 #define PROM_FLAG 0xF00000
 
+#define NOMOVE 0
+
 
 // GLOBALS
 extern int SQ120toSQ64[BRD_SQ_NUM];
@@ -185,6 +187,7 @@ extern int SqAttacked(const int sq, const int side, const S_BOARD *pos);
 extern char *PrSq(const int sq);
 extern char *PrMv(const int mv);
 extern void PrintMvList(const S_MOVELIST *list);
+extern int ParseMv(char *ptrChar, S_BOARD *pos);
 
 //validate.c
 extern int SqOnBoard(const int sq);
@@ -195,5 +198,12 @@ extern int PieceValid(const int pce);
 
 //mvgen.c
 extern void GenerateAllMvs(const S_BOARD *pos, S_MOVELIST *list);
+
+//makemv.c
+extern void takeMv(S_BOARD *pos);
+extern int makeMv(S_BOARD *pos, int mv);
+
+// perft.c
+extern void PerftTest(int depth, S_BOARD *pos);
 
 #endif // !DEFS_H

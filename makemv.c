@@ -1,5 +1,6 @@
 #include "defs.h"
 #include "debug.h"
+#include <stdio.h>
 
 #define HASH_PCE(pce, sq) (pos->posKey ^= (PieceKeys[pce][sq]))
 #define HASH_CA (pos->posKey ^= (CastleKeys[pos->castlePerm]))
@@ -96,6 +97,9 @@ static void MovePiece(const int from, const int to, S_BOARD *pos){
   int pce = pos->pieces[from];
   int col = PieceCol[pce];
 
+  ASSERT(SideValid(col));
+  ASSERT(PieceValid(pce));
+
 #ifdef DEBUG
   int t_PieceNum = FALSE;
 #endif 
@@ -116,15 +120,78 @@ static void MovePiece(const int from, const int to, S_BOARD *pos){
   for (i = 0; i < pos->pceNum[pce]; ++i) {
     if(pos->pList[pce][i] == from){
       pos->pList[pce][i] = to;
-
 #ifdef DEBUG
-  int t_PieceNum = TRUE;
+      t_PieceNum = TRUE;
 #endif 
-
       break;
     }
   }
   ASSERT(t_PieceNum);
+}
+
+void takeMv(S_BOARD *pos){
+
+  ASSERT(CheckBrd(pos))
+
+  pos->histPly--;
+  pos->ply--;
+
+  int mv = pos->history[pos->histPly].move;
+  int from = FROMSQ(mv);
+  int to = TOSQ(mv);
+
+  ASSERT(SqOnBoard(from));
+  ASSERT(SqOnBoard(to));
+
+  if(pos->enPas != NO_SQ) HASH_EP;
+  HASH_CA;
+
+  pos->castlePerm = pos->history[pos->histPly].castlePerm;
+  pos->fiftyMv = pos->history[pos->histPly].fiftyMv;
+  pos->enPas = pos->history[pos->histPly].enPas;
+
+  if (pos->enPas != NO_SQ) HASH_EP; 
+  HASH_CA;
+
+  pos->side ^= 1;
+  HASH_SIDE;
+
+  if (EP_FLAG & mv) {
+    if (pos->side == WHITE) {
+      AddPiece(to-10, pos, bP);
+    } else {
+      AddPiece(to+10, pos, wP);
+    }
+  } else if (CASTLE_FLAG & mv) {
+    switch (to) {
+      case C1: MovePiece(D1, A1, pos); break;
+      case C8: MovePiece(D8, A8, pos); break;
+      case G1: MovePiece(F1, H1, pos); break;
+      case G8: MovePiece(F8, H8, pos); break;
+      default: ASSERT(FALSE);
+    }
+  }
+
+  MovePiece(to, from, pos);
+
+  if (PieceKing[pos->pieces[from]]) {
+    pos->KingSq[pos->side] = from;
+  }
+
+  int cap = CAPTURED(mv);
+  if (cap != EMPTY) {
+    ASSERT(PieceValid(cap));
+    AddPiece(to, pos, cap);
+  }
+
+  if (PROMOTED(mv) != EMPTY) {
+    ASSERT(PieceValid(PROMOTED(mv)) && !PiecePawn[PROMOTED(mv)]);
+    ClearPiece(from, pos);
+    AddPiece(from, pos, (PieceCol[PROMOTED(mv)]) == WHITE ? wP: bP);
+  }
+
+  ASSERT(CheckBrd(pos));
+
 }
 
 int makeMv(S_BOARD *pos, int mv){
@@ -134,8 +201,6 @@ int makeMv(S_BOARD *pos, int mv){
   int from = FROMSQ(mv);
   int to = TOSQ(mv);
   int side = pos->side;
-  int dir = side == WHITE? 1:-1;
-  int st_RANK = side == WHITE? RANK_2:RANK_7;
 
   ASSERT(SqOnBoard(from));
   ASSERT(SqOnBoard(to));
@@ -145,7 +210,11 @@ int makeMv(S_BOARD *pos, int mv){
   pos->history[pos->histPly].posKey = pos->posKey;
 
   if (mv & EP_FLAG) {
-      ClearPiece(to+(10*-dir), pos);
+    if(side == WHITE) {
+            ClearPiece(to-10,pos);
+        } else {
+            ClearPiece(to+10,pos);
+        }
   } else if (mv & CASTLE_FLAG) {
     switch (to) {
       case C1:
@@ -191,14 +260,20 @@ int makeMv(S_BOARD *pos, int mv){
   pos->histPly++;
   pos->ply++;
 
-  if (PiecePawn[pos->pieces[from]]) {
-    pos->fiftyMv = 0;
-    if (mv & PAWN_START_FLAG) {
-      pos->enPas=from+(10*dir);
-      ASSERT(RanksBrd[pos->enPas] == st_RANK+dir);
-      HASH_EP;
-    }
+if(PiecePawn[pos->pieces[from]]) {
+        pos->fiftyMv = 0;
+        if(mv & PAWN_START_FLAG) {
+            if(side==WHITE) {
+                pos->enPas=from+10;
+                ASSERT(RanksBrd[pos->enPas]==RANK_3);
+            } else {
+                pos->enPas=from-10;
+                ASSERT(RanksBrd[pos->enPas]==RANK_6);
+            }
+            HASH_EP;
+        }
   }
+
 
   MovePiece(from, to, pos);
 
@@ -219,12 +294,10 @@ int makeMv(S_BOARD *pos, int mv){
   ASSERT(CheckBrd(pos));
 
   if (SqAttacked(pos->KingSq[side], pos->side, pos)) {
-    // takeMv(pos);
+    takeMv(pos);
     return (FALSE);
   }
 
   return TRUE;
-
 }
-
 

@@ -29,7 +29,7 @@ int SqAttacked(const int sq, const int side, const S_BOARD *pos){
   //knights
   for (i = 0;i<8;++i) {
     pce = pos->pieces[sq + KnDir[i]];
-    if(isKn(pce) && PieceCol[pce]==side){
+    if(isKn(pce) && PieceCol[pce]==side && pce!=NO_SQ){
       return TRUE;
     }
   }

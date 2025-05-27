@@ -41,21 +41,21 @@ int LoopSlideIndex[2] = {0, 4};
 int LoopNonSlideIndex[2] = {0, 3};
 int LoopBigIndex[2] = {0, 5};
 
-void AddQuietMv( const S_BOARD *pos, int mv, S_MOVELIST *list){
-  list->mv[list->count].mv = mv;
-  list->mv[list->count].score = 0;
+void AddQuietMv( const S_BOARD *pos, int move, S_MOVELIST *list){
+  list->moves[list->count].mv = move;
+  list->moves[list->count].score = 0;
   list->count++;
 }
 
 void AddCaptureMv( const S_BOARD *pos, int mv, S_MOVELIST *list){
-  list->mv[list->count].mv = mv;
-  list->mv[list->count].score = 0;
+  list->moves[list->count].mv = mv;
+  list->moves[list->count].score = 0;
   list->count++;
 }
 
 void AddEpMv( const S_BOARD *pos, int mv, S_MOVELIST *list){
-  list->mv[list->count].mv = mv;
-  list->mv[list->count].score = 0;
+  list->moves[list->count].mv = mv;
+  list->moves[list->count].score = 0;
   list->count++;
 }
 
@@ -195,5 +195,68 @@ void GenerateAllMvs(const S_BOARD *pos, S_MOVELIST *list){
 			}
 		}
   }
+
+  /* Loop for slide pieces */
+	pceIndex = LoopSlideIndex[side];
+	pce = LoopSlidePce[pceIndex++];
+	while( pce != 0) {
+		ASSERT(PieceValid(pce));
+
+		for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
+			sq = pos->pList[pce][pceNum];
+			ASSERT(SqOnBoard(sq));
+
+			for(index = 0; index < NumDir[pce]; ++index) {
+				dir = PceDir[pce][index];
+				t_sq = sq + dir;
+
+				while(!SQOFFBOARD(t_sq)) {
+					if(pos->pieces[t_sq] != EMPTY) {
+						if( PieceCol[pos->pieces[t_sq]] == (side ^ 1)) {
+							AddCaptureMv(pos, MOVE(sq, t_sq, pos->pieces[t_sq], EMPTY, 0), list);
+						}
+						break;
+					}
+					AddQuietMv(pos, MOVE(sq, t_sq, EMPTY, EMPTY, 0), list);
+					t_sq += dir;
+				}
+			}
+		}
+		pce = LoopSlidePce[pceIndex++];
+	}
+
+/* Loop for non slide */
+	pceIndex = LoopNonSlideIndex[side];
+	pce = LoopNonSlidePce[pceIndex++];
+
+	while( pce != 0) {
+		ASSERT(PieceValid(pce));
+
+		for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
+			sq = pos->pList[pce][pceNum];
+			ASSERT(SqOnBoard(sq));
+
+			for(index = 0; index < NumDir[pce]; ++index) {
+				dir = PceDir[pce][index];
+				t_sq = sq + dir;
+
+				if(SQOFFBOARD(t_sq)) {
+					continue;
+				}
+
+				if(pos->pieces[t_sq] != EMPTY) {
+					if( PieceCol[pos->pieces[t_sq]] == (side ^ 1)) {
+						AddCaptureMv(pos, MOVE(sq, t_sq, pos->pieces[t_sq], EMPTY, 0), list);
+					}
+					continue;
+				}
+				AddQuietMv(pos, MOVE(sq, t_sq, EMPTY, EMPTY, 0), list);
+			}
+		}
+
+		pce = LoopNonSlidePce[pceIndex++];
+	}
+
+
 }
 
