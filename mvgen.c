@@ -41,6 +41,23 @@ int LoopSlideIndex[2] = {0, 4};
 int LoopNonSlideIndex[2] = {0, 3};
 int LoopBigIndex[2] = {0, 5};
 
+int MoveExists(S_BOARD *pos, const int move){
+  S_MOVELIST list[1];
+  GenerateAllMvs(pos, list);
+
+  int i;
+  for (i = 0 ; i < list->count; ++i) {
+    if (!makeMv(pos, list->moves[i].mv)) {
+      continue;
+    }
+    takeMv(pos);
+    if (list->moves[i].mv == move) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
 void AddQuietMv( const S_BOARD *pos, int move, S_MOVELIST *list){
   list->moves[list->count].mv = move;
   list->moves[list->count].score = 0;

@@ -38,6 +38,8 @@ void ResetBoard(S_BOARD *pos){
 
   pos->posKey = 0ULL;
 
+  initPvTable(pos->PvTable);
+
 }
 
 int ParseFen(char* fen, S_BOARD *pos){
@@ -285,3 +287,5 @@ int CheckBrd(const S_BOARD *pos){
 
   return TRUE;
 }
+
+

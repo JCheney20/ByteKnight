@@ -10,8 +10,12 @@ typedef unsigned long long U64;
 
 #define MAXGAMEMOVES 2048
 #define MAXPOSITIONMOVES 256
+#define MAXDEPTH 64
 
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
+#define INF 30000
+#define MATE (INF - MAXDEPTH)
 
 enum PIECES {EMPTY, wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK};
 enum FILES {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE_NONE};
@@ -43,6 +47,16 @@ typedef struct {
   S_MOVE moves[MAXPOSITIONMOVES];
   int count;
 } S_MOVELIST ;
+
+typedef struct {
+  U64 posKey;
+  int mv;
+} S_PVENTRY;
+
+typedef struct {
+  S_PVENTRY *pTable;
+  int numEntries;
+} S_PVTABLE;
 
 typedef struct{
   
@@ -83,8 +97,30 @@ typedef struct {
   // piece lst
   int pList[13][10];
 
-  
+  S_PVTABLE PvTable[1];
+  int PvArr[MAXDEPTH];
+
+  int searchHist[13][BRD_SQ_NUM];
+  int searchKillers[2][MAXDEPTH];
+
 } S_BOARD; 
+
+typedef struct {
+
+  int start_time;
+  int stop_time;
+  int t_set;
+  int t_lim;
+  int depth;
+  int d_set;
+  int movestogo;
+
+  long nodes;
+
+  int quit;
+  int stopped;
+
+} S_SEARCHINFO;
 
 
 // MACROS
@@ -198,6 +234,7 @@ extern int PieceValid(const int pce);
 
 //mvgen.c
 extern void GenerateAllMvs(const S_BOARD *pos, S_MOVELIST *list);
+extern int MoveExists(S_BOARD *pos, const int move);
 
 //makemv.c
 extern void takeMv(S_BOARD *pos);
@@ -205,5 +242,22 @@ extern int makeMv(S_BOARD *pos, int mv);
 
 // perft.c
 extern void PerftTest(int depth, S_BOARD *pos);
+
+//search.c
+extern void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info);
+extern int isRepetition(const S_BOARD *pos);
+
+//misc.c
+extern int GetTimeMS();
+
+//pvtable.c
+extern void initPvTable(S_PVTABLE *table);
+extern void StorePvMove(const S_BOARD *pos, const int move);
+extern int ProbePvTable(const S_BOARD *pos);
+extern int GetPvLine(const int depth, S_BOARD *pos);
+extern void ClearPvTable(S_PVTABLE *table);
+
+//eval.c
+extern int evalPos(const S_BOARD *pos);
 
 #endif // !DEFS_H

@@ -35,6 +35,8 @@ void PerftTest(int depth, S_BOARD *pos){
   printf("\nStarting Test to Depth:%d\n", depth);
 
   leafNodes=0;
+  int start = GetTimeMS();
+
 
   S_MOVELIST list[1];
   GenerateAllMvs(pos, list);
@@ -52,7 +54,7 @@ void PerftTest(int depth, S_BOARD *pos){
     long OldNodes = leafNodes - CumNodes;
     printf("move %d : %s : %ld nodes visited\n", MvNum+1,PrMv(move), OldNodes);
   }
-  printf("\nTest Complete: %ld nodes visited\n", leafNodes);
+  printf("\nTest Complete: %ld nodes visited in %dms\n", leafNodes, GetTimeMS()-start);
   return;
 }
 
