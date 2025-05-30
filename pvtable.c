@@ -49,7 +49,7 @@ void initPvTable(S_PVTABLE *table){
 }
 
 int ProbePvTable(const S_BOARD *pos){
-  int i = pos->posKey % pos->PvTable->numEntries -1;
+  int i = pos->posKey % pos->PvTable->numEntries - 1;
 
   ASSERT(i>=0 && i<=pos->PvTable->numEntries-1);
 

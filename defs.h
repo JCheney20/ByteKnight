@@ -120,6 +120,9 @@ typedef struct {
   int quit;
   int stopped;
 
+  float fh;
+  float fhf;
+
 } S_SEARCHINFO;
 
 
@@ -234,7 +237,9 @@ extern int PieceValid(const int pce);
 
 //mvgen.c
 extern void GenerateAllMvs(const S_BOARD *pos, S_MOVELIST *list);
+extern void GenerateAllCaps(const S_BOARD *pos, S_MOVELIST *list);
 extern int MoveExists(S_BOARD *pos, const int move);
+extern void InitMvvLva();
 
 //makemv.c
 extern void takeMv(S_BOARD *pos);

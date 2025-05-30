@@ -38,7 +38,6 @@ void ResetBoard(S_BOARD *pos){
 
   pos->posKey = 0ULL;
 
-  initPvTable(pos->PvTable);
 
 }
 
