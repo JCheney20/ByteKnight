@@ -4,6 +4,10 @@
 
 long leafNodes;
 
+int InCheck(S_BOARD *pos){
+  return SqAttacked(pos->KingSq[pos->side], pos->side, pos);
+}
+
 void Perft(int depth, S_BOARD *pos){
 
   ASSERT(CheckBrd(pos));
@@ -57,5 +61,7 @@ void PerftTest(int depth, S_BOARD *pos){
   printf("\nTest Complete: %ld nodes visited in %dms\n", leafNodes, GetTimeMS()-start);
   return;
 }
+
+
 
 

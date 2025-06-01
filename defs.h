@@ -5,7 +5,8 @@
 
 typedef unsigned long long U64;
 
-#define  NAME "ByteKnight 1.0"
+#define  NAME "Just-in-Check 1.0"
+#define AUTHOR "Justin Cheney"
 #define BRD_SQ_NUM 120
 
 #define MAXGAMEMOVES 2048
@@ -22,6 +23,8 @@ enum FILES {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE
 enum RANKS {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_NONE};
 
 enum COLOURS { WHITE, BLACK, BOTH};
+
+enum MODES { UCIMODE, XBOARDMODE, CONSOLEMODE};
 
 enum SQRS {
   A1 = 21, B1, C1, D1, E1, F1, G1, H1,
@@ -114,7 +117,6 @@ typedef struct {
   int depth;
   int d_set;
   int movestogo;
-
   long nodes;
 
   int quit;
@@ -122,6 +124,9 @@ typedef struct {
 
   float fh;
   float fhf;
+  
+  int GAME_MODE;
+  int POST_THINKING;
 
 } S_SEARCHINFO;
 
@@ -247,6 +252,7 @@ extern int makeMv(S_BOARD *pos, int mv);
 
 // perft.c
 extern void PerftTest(int depth, S_BOARD *pos);
+extern int InCheck(S_BOARD *pos);
 
 //search.c
 extern void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info);
@@ -254,6 +260,7 @@ extern int isRepetition(const S_BOARD *pos);
 
 //misc.c
 extern int GetTimeMS();
+extern void ReadInput(S_SEARCHINFO *info);
 
 //pvtable.c
 extern void initPvTable(S_PVTABLE *table);
@@ -264,5 +271,8 @@ extern void ClearPvTable(S_PVTABLE *table);
 
 //eval.c
 extern int evalPos(const S_BOARD *pos);
+
+//uci.c
+extern void UCI_Loop(S_BOARD *pos, S_SEARCHINFO *info);
 
 #endif // !DEFS_H
