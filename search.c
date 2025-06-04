@@ -126,8 +126,18 @@ static int AlphaBeta(int alpha, int beta, int depth, S_SEARCHINFO *info, S_BOARD
   if ((isRepetition(pos) || pos->fiftyMv >= 100) && pos->ply) return 0;
   if (pos->ply > MAXDEPTH -1) return evalPos(pos);
 
-  int InCheck = SqAttacked(pos->KingSq[pos->side],pos->side^1,pos);
-  if (InCheck == TRUE) depth++; 
+  if (InCheck(pos) == TRUE) depth++; 
+
+  int Score = -INF;
+
+  if (DoNULL && !InCheck(pos) && pos->ply && (pos->bigPce[pos->side] > 0) && depth >= 4) {
+    makeNullMv(pos);
+    Score = -AlphaBeta(-beta, -beta + 1, depth-4, info, pos, FALSE);
+    takeNullMv(pos);
+    if (info->stopped == TRUE) return 0;
+    if (Score>= beta) return beta;
+  
+  }
   
 
   S_MOVELIST list[1];
@@ -136,7 +146,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_SEARCHINFO *info, S_BOARD
   int Legal = 0;
   int OldAlpha = alpha;
   int BestMv = NOMOVE;
-  int Score = -INF;
+  Score = -INF;
   int MvNum = 0;
   int pvMove = ProbePvTable(pos);
 
@@ -181,7 +191,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_SEARCHINFO *info, S_BOARD
   }
 
   if (Legal == 0) {
-    if (InCheck) {
+    if (InCheck(pos) == TRUE) {
       return -INF + pos->ply;
     } else return 0;
   }

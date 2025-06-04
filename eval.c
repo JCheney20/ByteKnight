@@ -12,6 +12,9 @@ const int RookOpenFile = 10;
 const int RookSemiOpenFile = 5;
 const int QueenOpenFile = 5;
 const int QueenSemiOpenFile = 3;
+const int BishopPair = 30;
+
+#define ENDGAME_MAT (1 * PieceVal[wR] + 2*PieceVal[wN] + 2 * PieceVal[wP])
 
 const int PawnTable[64] = {
 0	,	0	,	0	, 0	, 0	,	0	,	0	,	0	,
@@ -91,11 +94,36 @@ const int KingO[64] = {
 	-70	,	-70	,	-70	,	-70	,	-70	,	-70	,	-70	,	-70		
 };
 
+int MaterialDraw(const S_BOARD *pos){
+if (!pos->pceNum[wR] && !pos->pceNum[bR] && !pos->pceNum[wQ] && !pos->pceNum[bQ]) {
+	  if (!pos->pceNum[bB] && !pos->pceNum[wB]) {
+	      if (pos->pceNum[wN] < 3 && pos->pceNum[bN] < 3) {return TRUE;} 
+	  } else if (!pos->pceNum[wN] && !pos->pceNum[bN]) {
+	     if (abs(pos->pceNum[wB] - pos->pceNum[bB]) < 2) { return TRUE; }
+	  } else if ((pos->pceNum[wN] < 3 && !pos->pceNum[wB]) || (pos->pceNum[wB] == 1 && !pos->pceNum[wN])) {
+	    if ((pos->pceNum[bN] < 3 && !pos->pceNum[bB]) || (pos->pceNum[bB] == 1 && !pos->pceNum[bN]))  { return TRUE; }
+	  }
+	} else if (!pos->pceNum[wQ] && !pos->pceNum[bQ]) {
+        if (pos->pceNum[wR] == 1 && pos->pceNum[bR] == 1) {
+            if ((pos->pceNum[wN] + pos->pceNum[wB]) < 2 && (pos->pceNum[bN] + pos->pceNum[bB]) < 2)	{ return TRUE; }
+        } else if (pos->pceNum[wR] == 1 && !pos->pceNum[bR]) {
+            if ((pos->pceNum[wN] + pos->pceNum[wB] == 0) && (((pos->pceNum[bN] + pos->pceNum[bB]) == 1) || ((pos->pceNum[bN] + pos->pceNum[bB]) == 2))) { return TRUE; }
+        } else if (pos->pceNum[bR] == 1 && !pos->pceNum[wR]) {
+            if ((pos->pceNum[bN] + pos->pceNum[bB] == 0) && (((pos->pceNum[wN] + pos->pceNum[wB]) == 1) || ((pos->pceNum[wN] + pos->pceNum[wB]) == 2))) { return TRUE; }
+        }
+    }
+  return FALSE;
+}
+
 
 int evalPos(const S_BOARD *pos){
 
   int pce, pceNum, sq;
   int score = pos->material[WHITE] - pos->material[BLACK];
+
+  if (!pos->pceNum[wP] && !pos->pceNum[bP] && MaterialDraw(pos) == TRUE) {
+    return 0;
+  }
 
   pce = wP;
   for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
@@ -155,13 +183,11 @@ int evalPos(const S_BOARD *pos){
   }
 
   pce=wK;
-  for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
-    sq = pos->pList[pce][pceNum];
-    ASSERT(SqOnBoard(sq));
-    if ((pos->bigPce[WHITE] + pos->bigPce[BLACK]) >= 7) {
-      score+= KingO[SQ64(sq)];
-    } else score+= KingE[SQ64(sq)];
-  }
+  sq = pos->pList[pce][0];
+  ASSERT(SqOnBoard(sq));
+  if ((pos->bigPce[BLACK] <= 4) || (pos->material[BLACK] <= ENDGAME_MAT)) {
+    score += KingE[SQ64(sq)];
+  } else score+= KingO[SQ64(sq)];
 
 
   pce = bP;
@@ -223,13 +249,15 @@ int evalPos(const S_BOARD *pos){
   }
   
   pce=bK;
-  for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
-    sq = pos->pList[pce][pceNum];
-    ASSERT(SqOnBoard(sq));
-    if ((pos->bigPce[WHITE] + pos->bigPce[BLACK]) >= 7) {
-      score-= KingO[MIRROR64(SQ64(sq))];
-    } else score-= KingE[MIRROR64(SQ64(sq))];
-  }
+  sq = pos->pList[pce][0];
+  ASSERT(SqOnBoard(sq));
+  if ((pos->bigPce[WHITE] <= 4) || (pos->material[WHITE] <= ENDGAME_MAT)) {
+    score -= KingE[MIRROR64(SQ64(sq))];
+  } else score-= KingO[MIRROR64(SQ64(sq))];
+
+  if (pos->pceNum[wB] >= 2) score += BishopPair;
+  if (pos->pceNum[bB] >= 2) score -= BishopPair;
+  
 
   if (pos->side == WHITE) {
     return score;

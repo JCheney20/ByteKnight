@@ -4,10 +4,9 @@
 
 long leafNodes;
 
-// int InCheck(S_BOARD *pos){
-//   return SqAttacked(pos->KingSq[pos->side], pos->side^1, pos);
-// }
-
+int InCheck(const S_BOARD *pos){
+ return SqAttacked(pos->KingSq[pos->side], pos->side^1, pos);
+}
 void Perft(int depth, S_BOARD *pos){
 
   ASSERT(CheckBrd(pos));

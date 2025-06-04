@@ -214,7 +214,6 @@ extern U64 IsolatedMask[64];
 
 extern int Mirror64[64];
 
-
 // FUNCTIONS
 // init.c
 extern void AllInit();
@@ -260,10 +259,12 @@ extern void InitMvvLva();
 //makemv.c
 extern void takeMv(S_BOARD *pos);
 extern int makeMv(S_BOARD *pos, int mv);
+extern void makeNullMv(S_BOARD *pos);
+extern void takeNullMv(S_BOARD *pos);
 
 // perft.c
 extern void PerftTest(int depth, S_BOARD *pos);
-// extern int InCheck(S_BOARD *pos);
+extern int InCheck(const S_BOARD *pos);
 
 //search.c
 extern void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info);

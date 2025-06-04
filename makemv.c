@@ -301,3 +301,47 @@ if(PiecePawn[pos->pieces[from]]) {
   return TRUE;
 }
 
+
+void makeNullMv(S_BOARD *pos){
+  ASSERT(CheckBrd(pos));
+  ASSERT(!InCheck(pos));
+
+  pos->ply++;
+  pos->history[pos->histPly].posKey = pos->posKey;
+
+  if (pos->enPas != NO_SQ) HASH_EP;
+
+  pos->history[pos->histPly].move = NOMOVE;
+  pos->history[pos->histPly].fiftyMv = pos->fiftyMv;
+  pos->history[pos->histPly].enPas = pos->enPas;
+  pos->history[pos->histPly].castlePerm = pos->castlePerm;
+  pos->enPas = NO_SQ;
+  pos->side ^= 1;
+  pos->histPly++;
+  HASH_SIDE;
+
+  ASSERT(CheckBrd(pos));
+  return;
+
+}
+
+void takeNullMv(S_BOARD *pos){
+  ASSERT(CheckBrd(pos));
+
+  pos->ply--;
+  pos->histPly--;
+
+  if (pos->enPas != NO_SQ) HASH_EP;
+
+  pos->fiftyMv = pos->history[pos->histPly].fiftyMv ;
+  pos->enPas = pos->history[pos->histPly].enPas ;
+  pos->castlePerm = pos->history[pos->histPly].castlePerm ;
+  
+  if (pos->enPas != NO_SQ) HASH_EP;
+  pos->side ^= 1;
+  HASH_SIDE;
+
+  ASSERT(CheckBrd(pos));
+
+}
+
