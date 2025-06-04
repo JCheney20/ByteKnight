@@ -18,9 +18,9 @@ static void PickNextMv(int mvNum, S_MOVELIST *list){
     }
   }
   
-  ASSERT(moveNum>=0 && moveNum<list->count);
+  ASSERT(mvNum>=0 && mvNum<list->count);
 	ASSERT(bestNum>=0 && bestNum<list->count);
-	ASSERT(bestNum>=moveNum);
+	ASSERT(bestNum>=mvNum);
 
   temp = list->moves[mvNum];
   list->moves[mvNum] = list->moves[bestNum];
@@ -32,9 +32,7 @@ int isRepetition(const S_BOARD *pos){
 
   for (i=pos->histPly - pos->fiftyMv; i < pos->histPly-1; ++i) {
     ASSERT(i>= 0 && i<= MAXGAMEMOVES);
-    if (pos->posKey == pos->history[i].posKey) {
-      return TRUE;
-    }
+    if (pos->posKey == pos->history[i].posKey) return TRUE;
   }
   return FALSE;
 }
@@ -75,7 +73,7 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info){
 
   info->nodes++;
 
-  if (isRepetition(pos) || pos->fiftyMv >= 100) return 0;
+  if ((isRepetition(pos) || pos->fiftyMv >= 100) && pos->ply) return 0;
   if (pos->ply > MAXDEPTH - 1) return evalPos(pos);
 
   int Score = evalPos(pos);
@@ -98,9 +96,7 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info){
     Score = -Quiescence(-beta, -alpha, pos, info);
     takeMv(pos);
     
-    if(info->stopped == TRUE){
-      return 0;
-    }
+    if(info->stopped == TRUE) return 0;
 
     if (Score>alpha) {
       if (Score>=beta) {
@@ -122,13 +118,17 @@ static int AlphaBeta(int alpha, int beta, int depth, S_SEARCHINFO *info, S_BOARD
 
   ASSERT(CheckBrd(pos));
 
-  if (depth <= 0) return Quiescence(alpha, beta, pos, info);
+  if (depth == 0) return Quiescence(alpha, beta, pos, info);
   if ((info->nodes & 2047) == 0 ) CheckUp(info);
 
   info->nodes++;
 
-  if (isRepetition(pos) || pos->fiftyMv>=100)  return 0;
+  if ((isRepetition(pos) || pos->fiftyMv >= 100) && pos->ply) return 0;
   if (pos->ply > MAXDEPTH -1) return evalPos(pos);
+
+  int InCheck = SqAttacked(pos->KingSq[pos->side],pos->side^1,pos);
+  if (InCheck == TRUE) depth++; 
+  
 
   S_MOVELIST list[1];
   GenerateAllMvs(pos, list);
@@ -158,9 +158,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_SEARCHINFO *info, S_BOARD
     Score = -AlphaBeta(-beta, -alpha, depth-1, info, pos, TRUE);
     takeMv(pos);
 
-    if(info->stopped == TRUE){
-      return 0;
-    }
+    if(info->stopped == TRUE) return 0;
 
     if (Score>alpha) {
       if (Score>=beta) {
@@ -183,8 +181,8 @@ static int AlphaBeta(int alpha, int beta, int depth, S_SEARCHINFO *info, S_BOARD
   }
 
   if (Legal == 0) {
-    if (SqAttacked(pos->KingSq[pos->side], pos->side^1, pos)) {
-      return -MATE + pos->ply;
+    if (InCheck) {
+      return -INF + pos->ply;
     } else return 0;
   }
 
@@ -203,6 +201,7 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info){
   int pvNum = 0;
   ClearForSearch(pos, info);
 
+  if (bestMv == NOMOVE) {
     for (curDepth = 1; curDepth <=info->depth; ++curDepth) {
       bestScore = AlphaBeta(-INF, INF, curDepth, info, pos, TRUE);
 
@@ -220,13 +219,16 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info){
       }
       if (info->GAME_MODE == UCIMODE || info->POST_THINKING == TRUE) {
         pvMoves = GetPvLine(curDepth, pos);
-        printf("pv");
+        if (!(info->GAME_MODE == XBOARDMODE)) printf("pv");
         for (pvNum = 0; pvNum<pvMoves; ++pvNum) {
           printf(" %s", PrMv(pos->PvArr[pvNum]));
         }
         CR;
       }
     }
+  
+  }
+
 
   if (info->GAME_MODE == UCIMODE) {
     printf("bestmove %s\n", PrMv(bestMv));

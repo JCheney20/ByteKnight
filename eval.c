@@ -2,9 +2,16 @@
 #include "defs.h"
 #include "debug.h"
 
-#define MIRROR64(sq) (Mirror64[(sq)])
-
 //TODO: Research into PST -> ML (Automated Eval)
+/*
+ */
+
+const int PawnIsolated = -10;
+const int PawnPassed[8] = {0, 5, 10, 20, 35, 60, 100, 200};
+const int RookOpenFile = 10;
+const int RookSemiOpenFile = 5;
+const int QueenOpenFile = 5;
+const int QueenSemiOpenFile = 3;
 
 const int PawnTable[64] = {
 0	,	0	,	0	, 0	, 0	,	0	,	0	,	0	,
@@ -84,16 +91,6 @@ const int KingO[64] = {
 	-70	,	-70	,	-70	,	-70	,	-70	,	-70	,	-70	,	-70		
 };
 
-int Mirror64[64] = {
-56	,	57	,	58	,	59	,	60	,	61	,	62	,	63	,
-48	,	49	,	50	,	51	,	52	,	53	,	54	,	55	,
-40	,	41	,	42	,	43	,	44	,	45	,	46	,	47	,
-32	,	33	,	34	,	35	,	36	,	37	,	38	,	39	,
-24	,	25	,	26	,	27	,	28	,	29	,	30	,	31	,
-16	,	17	,	18	,	19	,	20	,	21	,	22	,	23	,
-8	,	9	,	10	,	11	,	12	,	13	,	14	,	15	,
-0	,	1	,	2	,	3	,	4	,	5	,	6	,	7
-};
 
 int evalPos(const S_BOARD *pos){
 
@@ -105,6 +102,15 @@ int evalPos(const S_BOARD *pos){
     sq = pos->pList[pce][pceNum];
     ASSERT(SqOnBoard(sq));
     score+= PawnTable[SQ64(sq)];
+
+    if ((IsolatedMask[SQ64(sq)] & pos->pawns[WHITE]) == 0) {
+      score += PawnIsolated;
+    }
+
+    if ((WhitePassedMask[SQ64(sq)] & pos->pawns[BLACK]) == 0) {
+      score += PawnPassed[RanksBrd[sq]];
+    }
+
   }
   
   pce = wB;
@@ -126,6 +132,12 @@ int evalPos(const S_BOARD *pos){
     sq = pos->pList[pce][pceNum];
     ASSERT(SqOnBoard(sq));
     score+= RookTable[SQ64(sq)];
+
+    if (!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
+      score += RookOpenFile;
+    } else if (!(pos->pawns[WHITE] & FileBBMask[FilesBrd[sq]])) {
+      score += RookSemiOpenFile;
+    }
   }
 
   pce=wQ;
@@ -133,13 +145,39 @@ int evalPos(const S_BOARD *pos){
     sq = pos->pList[pce][pceNum];
     ASSERT(SqOnBoard(sq));
     score+= QueenTable[SQ64(sq)];
+    
+    if (!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
+      score += QueenOpenFile;
+    } else if (!(pos->pawns[WHITE] & FileBBMask[FilesBrd[sq]])) {
+      score += QueenSemiOpenFile;
+    }
+
   }
+
+  pce=wK;
+  for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
+    sq = pos->pList[pce][pceNum];
+    ASSERT(SqOnBoard(sq));
+    if ((pos->bigPce[WHITE] + pos->bigPce[BLACK]) >= 7) {
+      score+= KingO[SQ64(sq)];
+    } else score+= KingE[SQ64(sq)];
+  }
+
 
   pce = bP;
   for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
     sq = pos->pList[pce][pceNum];
     ASSERT(SqOnBoard(sq));
     score-= PawnTable[MIRROR64(SQ64(sq))];
+
+    if ((IsolatedMask[SQ64(sq)] & pos->pawns[BLACK]) == 0) {
+      score -= PawnIsolated;
+    }
+    
+    if ((BlackPassedMask[SQ64(sq)] & pos->pawns[WHITE]) == 0) {
+      score -= PawnPassed[7-RanksBrd[sq]];
+    }
+
   }
   
   pce = bB;
@@ -161,6 +199,13 @@ int evalPos(const S_BOARD *pos){
     sq = pos->pList[pce][pceNum];
     ASSERT(SqOnBoard(sq));
     score-= RookTable[MIRROR64(SQ64(sq))];
+
+    if (!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
+      score -= RookOpenFile;
+    } else if (!(pos->pawns[BLACK] & FileBBMask[FilesBrd[sq]])) {
+      score -= RookSemiOpenFile;
+    }
+
   }
   
   pce = bQ;
@@ -168,6 +213,22 @@ int evalPos(const S_BOARD *pos){
     sq = pos->pList[pce][pceNum];
     ASSERT(SqOnBoard(sq));
     score-= QueenTable[MIRROR64(SQ64(sq))];
+
+    if (!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
+      score -= QueenOpenFile;
+    } else if (!(pos->pawns[BLACK] & FileBBMask[FilesBrd[sq]])) {
+      score -= QueenSemiOpenFile;
+    }
+
+  }
+  
+  pce=bK;
+  for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
+    sq = pos->pList[pce][pceNum];
+    ASSERT(SqOnBoard(sq));
+    if ((pos->bigPce[WHITE] + pos->bigPce[BLACK]) >= 7) {
+      score-= KingO[MIRROR64(SQ64(sq))];
+    } else score-= KingE[MIRROR64(SQ64(sq))];
   }
 
   if (pos->side == WHITE) {

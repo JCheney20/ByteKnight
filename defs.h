@@ -5,7 +5,7 @@
 
 typedef unsigned long long U64;
 
-#define  NAME "Just-in-Check 1.0"
+#define NAME "Just-in-Check 1.1"
 #define AUTHOR "Justin Cheney"
 #define BRD_SQ_NUM 120
 
@@ -149,6 +149,7 @@ typedef struct {
 #define isRQ(p) (PieceRookQueen[p])
 #define isKn(p) (PieceKnight[p])
 #define isKi(p) (PieceKing[p])
+#define MIRROR64(sq) (Mirror64[(sq)])
 
 /* GAME MOVES
 * 0000 0000 0000 0000 0000 0111 1111 -> From {0x7F}
@@ -194,7 +195,6 @@ extern int PieceMin[13];
 extern int PieceVal[13];
 extern int PieceCol[13];
 
-
 extern int PiecePawn[13];
 extern int PieceKnight[13];
 extern int PieceKing[13];
@@ -204,6 +204,16 @@ extern int PieceSlides[13];
 
 extern int FilesBrd[BRD_SQ_NUM];
 extern int RanksBrd[BRD_SQ_NUM];
+
+extern U64 FileBBMask[8];
+extern U64 RanksBBMask[8];
+
+extern U64 BlackPassedMask[64];
+extern U64 WhitePassedMask[64];
+extern U64 IsolatedMask[64];
+
+extern int Mirror64[64];
+
 
 // FUNCTIONS
 // init.c
@@ -223,6 +233,7 @@ extern int ParseFen(char *fen, S_BOARD *pos);
 extern void PrintBoard(const S_BOARD *pos);
 extern void UpdateListMaterial(S_BOARD *pos);
 extern int CheckBrd(const S_BOARD *pos);
+extern void MirrorBrd(S_BOARD *pos);
 
 //attacks.c
 extern int SqAttacked(const int sq, const int side, const S_BOARD *pos);
@@ -252,7 +263,7 @@ extern int makeMv(S_BOARD *pos, int mv);
 
 // perft.c
 extern void PerftTest(int depth, S_BOARD *pos);
-extern int InCheck(S_BOARD *pos);
+// extern int InCheck(S_BOARD *pos);
 
 //search.c
 extern void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info);
@@ -274,5 +285,8 @@ extern int evalPos(const S_BOARD *pos);
 
 //uci.c
 extern void UCI_Loop(S_BOARD *pos, S_SEARCHINFO *info);
+
+extern void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info);
+extern void xBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info);
 
 #endif // !DEFS_H

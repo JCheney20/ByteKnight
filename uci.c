@@ -110,7 +110,7 @@ void UCI_Loop(S_BOARD *pos, S_SEARCHINFO *info){
   info->POST_THINKING = TRUE;
 
   char ln[INPUTBUFFER];
-  printf("id name %s\n", NAME);
+  printf("id name %s \n", NAME);
   printf("id author %s\n",AUTHOR);
   printf("uciok\n");
 

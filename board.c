@@ -130,8 +130,6 @@ int ParseFen(char* fen, S_BOARD *pos){
 
     ASSERT(file>=FILE_A && file <= FILE_H );
     ASSERT(rank>=RANK_1 && rank <=RANK_8);
-    // ASSERT(rank==RANK_3 && side == WHITE);
-    // ASSERT(rank==RANK_6 && side == BLACK);
 
     pos->enPas = FR2SQ(file, rank);
   }
@@ -287,4 +285,40 @@ int CheckBrd(const S_BOARD *pos){
   return TRUE;
 }
 
+void MirrorBrd(S_BOARD *pos){
+  int tempPieceArr[64];
+  int tempSide = pos->side^1;
+  int SwapPiece[13] = { EMPTY, bP, bN, bB, bR, bQ, bK, wP, wN, wB, wR, wQ, wK};
+  int tempCastlePerm = 0;
+  int tempEP = NO_SQ;
+  int sq, tp;
+
+  if (pos->castlePerm & WKCA) tempCastlePerm |= BKCA;
+  if (pos->castlePerm & WQCA) tempCastlePerm |= BQCA;
+  
+  if (pos->castlePerm & BKCA) tempCastlePerm |= WKCA;
+  if (pos->castlePerm & BQCA) tempCastlePerm |= WQCA;
+
+  if (pos->enPas != NO_SQ) tempEP = SQ120(MIRROR64(SQ64(pos->enPas)));
+
+  for (sq = 0; sq < 64; sq++) tempPieceArr[sq] = pos->pieces[SQ120(MIRROR64(sq))];
+
+  ResetBoard(pos);
+
+  for (sq = 0; sq < 64; sq++) {
+    tp = SwapPiece[tempPieceArr[sq]];
+    pos->pieces[SQ120(sq)] = tp;
+  }
+
+  pos->side = tempSide;
+  pos->castlePerm = tempCastlePerm;
+  pos->enPas = tempEP;
+
+  pos->posKey = GeneratePosKey(pos);
+
+  UpdateListMaterial(pos);
+
+  ASSERT(CheckBrd(pos));
+  
+}
 

@@ -101,6 +101,12 @@ void AddCaptureMv( const S_BOARD *pos, int mv, S_MOVELIST *list){
 }
 
 void AddEpMv( const S_BOARD *pos, int mv, S_MOVELIST *list){
+
+  ASSERT(SqOnBoard(FROMSQ(mv)));
+  ASSERT(SqOnBoard(TOSQ(mv)));
+  ASSERT(CheckBrd(pos));
+  ASSERT((RanksBrd[TOSQ(mv)]==RANK_6 && pos->side == WHITE) || (RanksBrd[TOSQ(mv)]==RANK_3 && pos->side == BLACK));
+
   list->moves[list->count].mv = mv;
   list->moves[list->count].score = 105 + 1000000;
   list->count++;
@@ -109,29 +115,37 @@ void AddEpMv( const S_BOARD *pos, int mv, S_MOVELIST *list){
 void AddPawnMv( const S_BOARD *pos, const int from, const int to, const int cap, S_MOVELIST *list, const int side){
   ASSERT(SqOnBoard(from));
   ASSERT(SqOnBoard(to));
-  int count = LoopBigIndex[side];
-  int DIR = side == WHITE? 1:-1;
-  int PROM = side == WHITE? RANK_7:RANK_2;
-  int ST_RANK = side == BLACK? RANK_7:RANK_2;
+  ASSERT(CheckBrd(pos));
 
   if (FilesBrd[from] == FilesBrd[to]) {
-    if (RanksBrd[from] == PROM ) {
-      while (LoopBigPce[count] != 0) {
-        AddQuietMv(pos, MOVE(from, to, EMPTY, (LoopBigPce[count++]), 0), list);
-      }
+    if (side == WHITE && RanksBrd[from] == RANK_7 ) {
+        AddQuietMv(pos, MOVE(from, to, EMPTY, wQ, 0), list);
+        AddQuietMv(pos, MOVE(from, to, EMPTY, wR, 0), list);
+        AddQuietMv(pos, MOVE(from, to, EMPTY, wB, 0), list);
+        AddQuietMv(pos, MOVE(from, to, EMPTY, wN, 0), list);
+    } else if (side == BLACK && RanksBrd[from] == RANK_2 ) {
+        AddQuietMv(pos, MOVE(from, to, EMPTY, bQ, 0), list);
+        AddQuietMv(pos, MOVE(from, to, EMPTY, bR, 0), list);
+        AddQuietMv(pos, MOVE(from, to, EMPTY, bB, 0), list);
+        AddQuietMv(pos, MOVE(from, to, EMPTY, bN, 0), list);
     } else {
       AddQuietMv(pos, MOVE(from, to, EMPTY, EMPTY, 0), list);
     }
   } else {
-    if (RanksBrd[from] == PROM ) {
-      count = LoopBigIndex[side];
       ASSERT(PieceValidEmpty(cap));
-      while (LoopBigPce[count] != 0) {
-        AddCaptureMv(pos, MOVE(from, to, cap, (LoopBigPce[count++]), 0), list);
+    if (side == WHITE && RanksBrd[from] == RANK_7 ) {
+          AddCaptureMv(pos, MOVE(from, to, cap, wQ, 0), list);
+          AddCaptureMv(pos, MOVE(from, to, cap, wR, 0), list);
+          AddCaptureMv(pos, MOVE(from, to, cap, wB, 0), list);
+          AddCaptureMv(pos, MOVE(from, to, cap, wN, 0), list);
+    } else if (side == BLACK && RanksBrd[from] == RANK_2 ) {
+          AddCaptureMv(pos, MOVE(from, to, cap, bQ, 0), list);
+          AddCaptureMv(pos, MOVE(from, to, cap, bR, 0), list);
+          AddCaptureMv(pos, MOVE(from, to, cap, bB, 0), list);
+          AddCaptureMv(pos, MOVE(from, to, cap, bN, 0), list);
+      } else {
+        AddCaptureMv(pos, MOVE(from, to, cap, EMPTY, 0), list);
       }
-    } else {
-      AddCaptureMv(pos, MOVE(from, to, cap, EMPTY, 0), list);
-    }
   }
 }
 
