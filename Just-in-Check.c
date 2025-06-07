@@ -13,14 +13,18 @@ int main(int argc, char *argv[]) {
 	AllInit();
 
 	S_BOARD pos[1];
-    S_SEARCHINFO info[1];
-    info->quit = FALSE;
-	HashTable->pTable = NULL;
-    InitHashTable(HashTable, 64);
-	setbuf(stdin, NULL);
-    setbuf(stdout, NULL);
-    
-    int ArgNum = 0;
+  S_SEARCHINFO info[1];
+  info->quit = FALSE;
+  info->NumThreads = 4;
+  EngineOpt->USE_BOOK = FALSE;
+
+  
+  HashTable->pTable = NULL;
+  InitHashTable(HashTable, 64);
+  setbuf(stdin, NULL);
+  setbuf(stdout, NULL);
+  
+  int ArgNum = 0;
     
     for(ArgNum = 0; ArgNum < argc; ++ArgNum) {
     	if(strncmp(argv[ArgNum], "NoBook", 6) == 0) {

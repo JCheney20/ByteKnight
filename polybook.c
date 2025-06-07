@@ -180,7 +180,9 @@ int getBookMv(S_BOARD *pos){
     int randMv = rand() % count;
     return bookMv[randMv];
   } else {
+    EngineOpt->USE_BOOK = FALSE;
     return NOMOVE;
+
   }
 }
 

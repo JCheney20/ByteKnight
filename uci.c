@@ -118,6 +118,7 @@ void UCI_Loop(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info){
   printf("uciok\n");
 
   int MB = 64;
+  int threads = MAXTHREADS;
 
 
   while (TRUE) {
@@ -156,6 +157,12 @@ void UCI_Loop(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info){
       if(MB > MAXHASH) MB = MAXHASH;
       printf("Set Hash to %d MB\n",MB);
       InitHashTable(table, MB);
+    } else if (!strncmp(ln, "setoption name Threads value ", 29)) {			
+      sscanf(ln,"%*s %*s %*s %*s %d",&threads);
+      if(threads < 2) threads = 2;
+      if(threads > MAXTHREADS) threads = MAXTHREADS;
+      printf("Set Num Threads to %d\n",threads);
+      info->NumThreads = threads;
     } else if (!strncmp(ln, "setoption name Book value ", 26)) {			
       char *ptrTrue = NULL;
       ptrTrue = strstr(ln, "true");

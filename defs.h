@@ -13,11 +13,17 @@ typedef unsigned long long U64;
 #define MAXPOSITIONMOVES 256
 #define MAXDEPTH 64
 #define MAXHASH 1024
+#define MAXTHREADS 32
 
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+#define FINE_70 "8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - -"
+#define WAC_ "8/7p/5k2/5p2/p1p2P2/Pr1pPK2/1P1R3P/8 b - -"
+#define LCT_1 "r3kb1r/3n1pp1/p6p/2pPp2q/Pp2N3/3B2PP/1PQ2P2/R3K2R w KQkq -"
 
-#define INF 30000
-#define MATE (INF - MAXDEPTH)
+
+#define INF 32000
+#define AB_BOUND 30000
+#define MATE (AB_BOUND - MAXDEPTH)
 
 enum PIECES {EMPTY, wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK};
 enum FILES {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE_NONE};
@@ -56,12 +62,14 @@ typedef struct {
 
 
 typedef struct {
-  U64 posKey;
+/*  U64 posKey;
   int mv;
   int score;
   int depth;
-  int flags;
+  int flags;*/
   int age;
+  U64 smp_key;
+  U64 smp_data;
 } S_HASHENTRY;
 
 typedef struct {
@@ -75,13 +83,11 @@ typedef struct {
 } S_HASHTABLE;
 
 typedef struct{
-  
   int move;
   int castlePerm;
   int enPas;
   int fiftyMv;
   U64 posKey;
-
 } S_UNDO ;
 
 typedef struct {
@@ -141,6 +147,8 @@ typedef struct {
   int GAME_MODE;
   int POST_THINKING;
 
+  int NumThreads;
+
 } S_SEARCHINFO;
 
 typedef struct {
@@ -152,6 +160,16 @@ typedef struct {
   S_BOARD *pos_t;
   S_HASHTABLE *table_t;
 } S_SEARCH_THREAD_DATA;
+
+typedef struct {
+  S_BOARD *pos;
+  S_SEARCHINFO *info;
+  S_HASHTABLE *table_t;
+
+  int t_Num;
+  int depth;
+  int bestMv;
+} S_SEARCH_WORKER_DATA;
 
 // MACROS
 #define FR2SQ(f,r) ( (21 + (f)) + ((r) * 10))
@@ -239,6 +257,8 @@ extern int Mirror64[64];
 extern S_OPTIONS EngineOpt[1];
 extern S_HASHTABLE HashTable[1];
 
+extern pthread_t tid[MAXTHREADS];
+
 // FUNCTIONS
 // init.c
 extern void AllInit();
@@ -293,7 +313,7 @@ extern void PerftTest(int depth, S_BOARD *pos);
 //search.c
 extern void SearchPosition(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info);
 extern int isRepetition(const S_BOARD *pos);
-extern void* SearchPos_t(void *data);
+extern void IterativeDeepen(S_SEARCH_WORKER_DATA *t_Data);
 
 //misc.c
 extern int GetTimeMS();
@@ -323,7 +343,11 @@ extern void CleanPolyBook();
 extern void InitPolyBook();
 
 //threads.c
-void JoinSearch_t(pthread_t tid,S_SEARCHINFO *info);
-pthread_t LaunchSearch_t(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
+extern void JoinSearch_t(pthread_t tid,S_SEARCHINFO *info);
+extern pthread_t LaunchSearch_t(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
+extern void* start_t(void *data);
+extern void* SearchPos_t(void *data);
+extern void setUp_t(int t_Num, pthread_t *tid, S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
+extern void creatSearch_t(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info);
 
 #endif // !DEFS_H

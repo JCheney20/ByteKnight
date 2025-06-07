@@ -1,6 +1,4 @@
 #include "defs.h"
-#include "stdlib.h"
-#include "stdio.h"
 
 int SQ120toSQ64[BRD_SQ_NUM];
 int SQ64toSQ120[64];
