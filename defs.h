@@ -12,6 +12,7 @@ typedef unsigned long long U64;
 #define MAXGAMEMOVES 2048
 #define MAXPOSITIONMOVES 256
 #define MAXDEPTH 64
+#define MAXHASH 1024
 
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -41,6 +42,8 @@ enum TF {FALSE, TRUE};
 
 enum CASTLING {WKCA = 1, WQCA = 2, BKCA = 4, BQCA = 8};
 
+enum {HFNONE, HFALPHA, HFBETA, HFEXACT};
+
 typedef struct{
   int mv;
   int score;
@@ -51,15 +54,25 @@ typedef struct {
   int count;
 } S_MOVELIST ;
 
+
 typedef struct {
   U64 posKey;
   int mv;
-} S_PVENTRY;
+  int score;
+  int depth;
+  int flags;
+  int age;
+} S_HASHENTRY;
 
 typedef struct {
-  S_PVENTRY *pTable;
+  S_HASHENTRY *pTable;
   int numEntries;
-} S_PVTABLE;
+  int newWrite;
+  int overWrite;
+  int hit;
+  int cut;
+  int curAge;
+} S_HASHTABLE;
 
 typedef struct{
   
@@ -100,7 +113,6 @@ typedef struct {
   // piece lst
   int pList[13][10];
 
-  S_PVTABLE PvTable[1];
   int PvArr[MAXDEPTH];
 
   int searchHist[13][BRD_SQ_NUM];
@@ -124,12 +136,22 @@ typedef struct {
 
   float fh;
   float fhf;
+  int nullCut;
   
   int GAME_MODE;
   int POST_THINKING;
 
 } S_SEARCHINFO;
 
+typedef struct {
+  int USE_BOOK;
+} S_OPTIONS;
+
+typedef struct {
+  S_SEARCHINFO *info_t;
+  S_BOARD *pos_t;
+  S_HASHTABLE *table_t;
+} S_SEARCH_THREAD_DATA;
 
 // MACROS
 #define FR2SQ(f,r) ( (21 + (f)) + ((r) * 10))
@@ -214,6 +236,9 @@ extern U64 IsolatedMask[64];
 
 extern int Mirror64[64];
 
+extern S_OPTIONS EngineOpt[1];
+extern S_HASHTABLE HashTable[1];
+
 // FUNCTIONS
 // init.c
 extern void AllInit();
@@ -264,30 +289,41 @@ extern void takeNullMv(S_BOARD *pos);
 
 // perft.c
 extern void PerftTest(int depth, S_BOARD *pos);
-extern int InCheck(const S_BOARD *pos);
 
 //search.c
-extern void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info);
+extern void SearchPosition(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info);
 extern int isRepetition(const S_BOARD *pos);
+extern void* SearchPos_t(void *data);
 
 //misc.c
 extern int GetTimeMS();
-extern void ReadInput(S_SEARCHINFO *info);
 
 //pvtable.c
-extern void initPvTable(S_PVTABLE *table);
-extern void StorePvMove(const S_BOARD *pos, const int move);
-extern int ProbePvTable(const S_BOARD *pos);
-extern int GetPvLine(const int depth, S_BOARD *pos);
-extern void ClearPvTable(S_PVTABLE *table);
+extern int GetPvLine(const int depth, S_BOARD *pos, const S_HASHTABLE *table);
+extern void ClearHashTable(S_HASHTABLE *table);
+extern void InitHashTable(S_HASHTABLE *table, int numMB);
+extern int ProbeHashEntry(S_BOARD *pos, S_HASHTABLE *table, int *move, int *score, int alpha, int beta, int depth);
+extern void StoreHashEntry(S_BOARD *pos, S_HASHTABLE *table, const int move, int score, const int flags, const int depth);
+extern int ProbePvMove(const S_BOARD *pos, const S_HASHTABLE *table);
 
 //eval.c
 extern int evalPos(const S_BOARD *pos);
 
 //uci.c
-extern void UCI_Loop(S_BOARD *pos, S_SEARCHINFO *info);
+extern void UCI_Loop(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info);
 
-extern void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info);
-extern void xBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info);
+
+//xboard.c
+extern void Console_Loop(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info);
+extern void xBoard_Loop(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info);
+
+//polybook.c
+extern int getBookMv(S_BOARD *pos);
+extern void CleanPolyBook();
+extern void InitPolyBook();
+
+//threads.c
+void JoinSearch_t(pthread_t tid,S_SEARCHINFO *info);
+pthread_t LaunchSearch_t(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
 
 #endif // !DEFS_H

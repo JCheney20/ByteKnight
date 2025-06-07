@@ -2,10 +2,16 @@
 #include "debug.h"
 #include "stdio.h"
 #include "string.h"
+#include "pthread.h"
+#include <bits/pthreadtypes.h>
+#include <stdlib.h>
+#include <time.h>
 
 #define INPUTBUFFER 400 * 6
 
-void ParseGo(char* ln, S_SEARCHINFO *info, S_BOARD *pos){
+pthread_t mainSearch_t;
+
+void ParseGo(char* ln, S_SEARCHINFO *info, S_BOARD *pos, S_HASHTABLE *table){
 
   int depth = -1, movestogo = 30, movetime = -1;
   int time = -1, inc  = 0;
@@ -64,11 +70,9 @@ void ParseGo(char* ln, S_SEARCHINFO *info, S_BOARD *pos){
   }
 
   printf("time: %d start: %d stop: %d depth: %d timeset: %d\n", time, info->start_time,info->stop_time, info->depth,info->t_set);
-  SearchPosition(pos, info);
+  mainSearch_t = LaunchSearch_t(pos, info, table);
 
 }
-
-
 void ParsePos(char* lnIn, S_BOARD *pos){
 
   lnIn += 9;
@@ -103,18 +107,18 @@ void ParsePos(char* lnIn, S_BOARD *pos){
   PrintBoard(pos);
 }
 
-void UCI_Loop(S_BOARD *pos, S_SEARCHINFO *info){
+void UCI_Loop(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info){
   setbuf(stdin, NULL);
   setbuf(stdout, NULL);
   info->GAME_MODE = UCIMODE;
-  info->POST_THINKING = TRUE;
 
   char ln[INPUTBUFFER];
   printf("id name %s \n", NAME);
   printf("id author %s\n",AUTHOR);
   printf("uciok\n");
 
-  initPvTable(pos->PvTable);
+  int MB = 64;
+
 
   while (TRUE) {
     memset(&ln[0], 0, sizeof(ln));
@@ -129,16 +133,39 @@ void UCI_Loop(S_BOARD *pos, S_SEARCHINFO *info){
     } else if (!strncmp(ln, "position", 8)) {
       ParsePos(ln, pos);
     } else if (!strncmp(ln, "ucinewgame", 10)) {
+      ClearHashTable(HashTable);
       ParsePos("position startpos\n", pos);
     } else if (!strncmp(ln, "go", 2)) {
-      ParseGo(ln, info, pos);
+      ParseGo(ln, info, pos, table);
+    } else if (!strncmp(ln, "run", 3)) {
+      ParseFen(START_FEN, pos);
+      ParseGo("go infinite", info, pos, table);
     } else if (!strncmp(ln, "quit", 4)) {
+      JoinSearch_t(mainSearch_t, info);
       info->quit = TRUE;
       break;
+    } else if (!strncmp(ln, "stop", 4)) {
+      JoinSearch_t(mainSearch_t, info);
     } else if (!strncmp(ln, "uci", 3)) {
       printf("id name %s\n", NAME);
       printf("id author Justin Cheney\n");
       printf("uciok\n");
+    } else if (!strncmp(ln, "setoption name Hash value ", 26)) {			
+      sscanf(ln,"%*s %*s %*s %*s %d",&MB);
+      if(MB < 4) MB = 4;
+      if(MB > MAXHASH) MB = MAXHASH;
+      printf("Set Hash to %d MB\n",MB);
+      InitHashTable(table, MB);
+    } else if (!strncmp(ln, "setoption name Book value ", 26)) {			
+      char *ptrTrue = NULL;
+      ptrTrue = strstr(ln, "true");
+      if(ptrTrue != NULL) {
+        EngineOpt->USE_BOOK = TRUE;
+        printf("Book Use: ON\n");
+      } else {
+        EngineOpt->USE_BOOK = FALSE;
+        printf("Book Use: OFF\n");
+      }
     }
     if (info->quit) break;
   }

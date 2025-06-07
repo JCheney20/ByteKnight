@@ -21,6 +21,7 @@ U64 RanksBBMask[8];
 U64 BlackPassedMask[64];
 U64 WhitePassedMask[64];
 U64 IsolatedMask[64];
+S_OPTIONS EngineOpt[1];
 
 void InitEvalMasks(){
   int sq, t_sq, r, f;
@@ -173,5 +174,6 @@ void AllInit(){
   InitFilesRanksBrd();
   InitEvalMasks();
   InitMvvLva();
+  InitPolyBook();
 
 }

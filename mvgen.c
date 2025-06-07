@@ -4,7 +4,6 @@
 
 #define MOVE(f, t, ca, pro, fl) ( (f) | ((t) << 7) | ((ca) << 14) | ((pro) << 20) | (fl))
 #define SQOFFBOARD(sq) (FilesBrd[sq] == NO_SQ)
-#define DIR_S dir[side]
 
 
 //Big Piece Arrays
@@ -14,10 +13,6 @@ int LoopSlidePce[8] = {
 
 int LoopNonSlidePce[6] = {
   wN, wK, 0, bN, bK, 0
-};
-
-int LoopBigPce[10] = {
-  wB, wR, wN, wQ, 0, bB, bR, bN, bQ, 0 
 };
 
 int PceDir[13][8] = {
@@ -39,7 +34,6 @@ int PceDir[13][8] = {
 int NumDir[13] = {0, 0, 8, 4, 4, 8, 8, 0, 8, 4, 4, 8, 8};
 int LoopSlideIndex[2] = {0, 4};
 int LoopNonSlideIndex[2] = {0, 3};
-int LoopBigIndex[2] = {0, 5};
 
 const int VicScore[13] = {0, 100, 200, 300, 400, 500, 600, 100, 200, 300, 400, 500, 600};
 static int MvvLvaScores[13][13];
@@ -61,13 +55,9 @@ int MoveExists(S_BOARD *pos, const int move){
 
   int i;
   for (i = 0 ; i < list->count; ++i) {
-    if (!makeMv(pos, list->moves[i].mv)) {
-      continue;
-    }
+    if (!makeMv(pos, list->moves[i].mv)) continue;
     takeMv(pos);
-    if (list->moves[i].mv == move) {
-      return TRUE;
-    }
+    if (list->moves[i].mv == move) return TRUE;
   }
   return FALSE;
 }

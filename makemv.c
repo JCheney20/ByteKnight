@@ -303,8 +303,9 @@ if(PiecePawn[pos->pieces[from]]) {
 
 
 void makeNullMv(S_BOARD *pos){
+
   ASSERT(CheckBrd(pos));
-  ASSERT(!InCheck(pos));
+  ASSERT(!(SqAttacked(pos->KingSq[pos->side], pos->side^1, pos)));
 
   pos->ply++;
   pos->history[pos->histPly].posKey = pos->posKey;

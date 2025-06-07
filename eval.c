@@ -185,7 +185,7 @@ int evalPos(const S_BOARD *pos){
   pce=wK;
   sq = pos->pList[pce][0];
   ASSERT(SqOnBoard(sq));
-  if ((pos->bigPce[BLACK] <= 4) || (pos->material[BLACK] <= ENDGAME_MAT)) {
+  if (pos->material[BLACK] <= ENDGAME_MAT) {
     score += KingE[SQ64(sq)];
   } else score+= KingO[SQ64(sq)];
 
@@ -251,7 +251,7 @@ int evalPos(const S_BOARD *pos){
   pce=bK;
   sq = pos->pList[pce][0];
   ASSERT(SqOnBoard(sq));
-  if ((pos->bigPce[WHITE] <= 4) || (pos->material[WHITE] <= ENDGAME_MAT)) {
+  if (pos->material[WHITE] <= ENDGAME_MAT) {
     score -= KingE[MIRROR64(SQ64(sq))];
   } else score-= KingO[MIRROR64(SQ64(sq))];
 

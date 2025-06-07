@@ -13,7 +13,7 @@ void ResetBoard(S_BOARD *pos){
     pos->pieces[SQ120(i)] = EMPTY;
   }
 
-  for (i=0;i<3;++i) {
+  for (i=0;i<2;++i) {
     pos->bigPce[i] = 0;
     pos->majPce[i] = 0;
     pos->minPce[i] = 0;
@@ -160,8 +160,8 @@ void PrintBoard(const S_BOARD *pos){
   }
   CR;CR;
 
-  printf("side:%c\n", SideChar[pos->side]);
-  printf("enPas:%d\n", pos-> enPas);
+  printf("side: %c\n", SideChar[pos->side]);
+  printf("enPas: %s\n", (pos->enPas != NO_SQ)? PrSq(pos-> enPas): "-");
   printf("castle: %c%c%c%c\n",
          pos->castlePerm & WKCA ? 'K' : '-',
          pos->castlePerm & WQCA ? 'Q' : '-',

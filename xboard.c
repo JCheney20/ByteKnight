@@ -1,8 +1,11 @@
 #include "stdio.h"
 #include "defs.h"
+#include "debug.h"
 #include "string.h"
 
 int threeFoldRep(const S_BOARD *pos){
+  ASSERT(CheckBrd(pos));
+
   int i = 0, r = 0;
   for (i = 0; i < pos->histPly; ++i) {
     if (pos->history[i].posKey == pos->posKey) r++;
@@ -11,6 +14,8 @@ int threeFoldRep(const S_BOARD *pos){
 }
 
 int DrawMaterial(const S_BOARD *pos){
+  ASSERT(CheckBrd(pos));
+
   if (pos->pceNum[wP] || pos->pceNum[bP]) return FALSE;
   if (pos->pceNum[wQ] || pos->pceNum[bQ] || pos->pceNum[wR] || pos->pceNum[bR]) return FALSE;
   if (pos->pceNum[wB] > 1 || pos->pceNum[bB] > 1) return FALSE;
@@ -22,6 +27,7 @@ int DrawMaterial(const S_BOARD *pos){
 }
 
 int checkresult(S_BOARD *pos){
+  ASSERT(CheckBrd(pos));
   if (pos->fiftyMv > 100) {
     printf(" 1/2 - 1/2 {fifty move rule [claimed by %s]}\n", NAME); return TRUE;
   }
@@ -48,7 +54,8 @@ int checkresult(S_BOARD *pos){
 
   if (found != 0 ) return FALSE;
 
-  int InCheck = SqAttacked(pos->KingSq[pos->side],pos->side^1,pos);
+  int InCheck = SqAttacked(pos->KingSq[pos->side], pos->side^1, pos);
+
 
   if (InCheck == TRUE) {
     if (pos->side == WHITE) {
@@ -68,7 +75,7 @@ void PrintOpt(){
       printf("feature done=1\n");
 }
 
-void xBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info){
+void xBoard_Loop(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info){
   info->GAME_MODE = XBOARDMODE;
 	info->POST_THINKING = TRUE;
 	setbuf(stdin, NULL);
@@ -77,7 +84,7 @@ void xBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info){
 
 	int depth = -1, movestogo[2] = {30,30 }, movetime = -1;
 	int time = -1, inc = 0;
-	int engineSide = BOTH;
+	int engineSide = BLACK;
 	int timeLeft;
 	int sec;
 	int mps;
@@ -85,10 +92,7 @@ void xBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info){
 	char inBuf[80], command[80];
 	int MB;
 
-	engineSide = BLACK;
 	ParseFen(START_FEN, pos);
-	depth = -1;
-	time = -1;
 
 	while(TRUE) {
 
@@ -111,7 +115,7 @@ void xBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info){
 
 			printf("time:%d start:%d stop:%d depth:%d timeset:%d movestogo:%d mps:%d\n",
 				time,info->start_time,info->stop_time,info->depth,info->t_set, movestogo[pos->side], mps);
-				SearchPosition(pos, info);
+				SearchPosition(pos, table, info);
 
 			if(mps != 0) {
 				movestogo[pos->side^1]--;
@@ -119,7 +123,6 @@ void xBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info){
 					movestogo[pos->side^1] = mps;
 				}
 			}
-
 		}
 
 		fflush(stdout);
@@ -166,7 +169,16 @@ void xBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info){
 		    printf("DEBUG time:%d\n",time);
 			continue;
 		}
-		
+
+		if(!strcmp(command, "memory")) {			
+			sscanf(inBuf, "memory %d", &MB);		
+		    if(MB < 4) MB = 4;
+			if(MB > MAXHASH) MB = MAXHASH;
+			printf("Set Hash to %d MB\n",MB);
+			InitHashTable(table, MB);
+			continue;
+		}
+
 
 		if(!strcmp(command, "level")) {
 			sec = 0;
@@ -180,9 +192,7 @@ void xBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info){
 			timeLeft *= 60000;
 			timeLeft += sec * 1000;
 			movestogo[0] = movestogo[1] = 30;
-			if(mps != 0) {
-				movestogo[0] = movestogo[1] = mps;
-			}
+			if(mps != 0) movestogo[0] = movestogo[1] = mps;
 			time = -1;
 		    printf("DEBUG level timeLeft:%d movesToGo:%d inc:%d mps%d\n",timeLeft,movestogo[0],inc,mps);
 			continue;
@@ -194,13 +204,18 @@ void xBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info){
 		}
 
 		if(!strcmp(command, "new")) {
-			ClearPvTable(pos->PvTable);
+			ClearHashTable(table);
 			engineSide = BLACK;
 			ParseFen(START_FEN, pos);
 			depth = -1;
 			time = -1;
 			continue;
 		}
+
+    if(!strcmp(command, "polykey")){
+      PrintBoard(pos);
+      getBookMv(pos);
+    }
 
 		if(!strcmp(command, "setboard")){
 			engineSide = BOTH;
@@ -223,7 +238,7 @@ void xBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info){
     }
 }
 
-void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info){
+void Console_Loop(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info){
   printf("Welcome to %s in Console Mode!\n", NAME);
   printf("Type help for commands\n\n");
 
@@ -244,12 +259,13 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info){
     if (pos->side == engineSide && checkresult(pos) == FALSE) {
       info->start_time = GetTimeMS();
       info->depth = depth;
+
       if (movetime != 0) {
         info->t_set = TRUE;
         info->stop_time = info->start_time + movetime;
       }
 
-      SearchPosition(pos, info);
+      SearchPosition(pos, table, info);
     }
 
     printf("\n%s ::>>", NAME);
@@ -344,7 +360,7 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info){
 		}
 
 		if(!strcmp(cmd, "new")) {
-      ClearPvTable(pos->PvTable);
+			ClearHashTable(table);
 			engineSide = BLACK;
 			ParseFen(START_FEN, pos);
 			continue;
