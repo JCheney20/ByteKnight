@@ -2,4 +2,4 @@ SRCS=$(wildcard *.c)
 NAME=Just-in-Check
 
 all:
-	gcc $(SRCS) -o $(NAME) -O2
+	gcc $(SRCS) -o $(NAME)
