@@ -7,7 +7,6 @@
 #include <time.h>
 
 int rootDepth;
-pthread_t tid[MAXTHREADS];
 
 static void CheckUp(S_SEARCHINFO *info){
   if (info->t_set == TRUE && GetTimeMS()>info->stop_time) info->stopped = TRUE;
@@ -216,7 +215,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_SEARCHINFO *info, S_BOARD
 
   if (Legal == 0) {
     if (InCheck == TRUE) {
-      return -INF + pos->ply;
+      return -AB_BOUND + pos->ply;
     } else return 0;
   }
 
@@ -270,12 +269,35 @@ void IterativeDeepen(S_SEARCH_WORKER_DATA *t_Data){
 }
 
 void SearchPosition(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info){
-
   ClearForSearch(pos, info, table);
-  creatSearch_t(pos, table, info);
+
+  int bestMv = NOMOVE;
+
+  if(EngineOpt->USE_BOOK == TRUE) {
+      bestMv = getBookMv(pos);
+      if (bestMv != NOMOVE) {
+        if (info->GAME_MODE == UCIMODE) {
+          printf("bestmove %s\n", PrMv(bestMv));
+        } else if (info->GAME_MODE == XBOARDMODE) {
+          printf("move %s\n", PrMv(bestMv));
+          makeMv(pos, bestMv);
+        } else {
+          CR;CR;
+          printf("===** %s makes move %s **===", NAME, PrMv(bestMv));
+          CR;CR;
+          makeMv(pos, bestMv);
+          PrintBoard(pos);
+        }
+    }
+  }
+
+  if (bestMv == NOMOVE) {
+    creatSearch_t(pos, table, info);
+  }
 
   for (int i =0; i < info->NumThreads; i++) {
     pthread_join(tid[i], NULL);
   }
+
 
 }

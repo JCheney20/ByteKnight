@@ -173,5 +173,6 @@ void AllInit(){
   InitEvalMasks();
   InitMvvLva();
   InitPolyBook();
+  InitPSTtable();
 
 }

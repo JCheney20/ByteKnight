@@ -4,6 +4,8 @@
 #include "defs.h"
 #include "debug.h"
 
+pthread_t tid[MAXTHREADS];
+
 pthread_t LaunchSearch_t(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table){
   S_SEARCH_THREAD_DATA *pSearchData = malloc(sizeof(S_SEARCH_THREAD_DATA));
 
@@ -36,11 +38,7 @@ void* SearchPos_t(void *data){
 void* start_t(void *data){
   S_SEARCH_WORKER_DATA *t_Data = (S_SEARCH_WORKER_DATA *)data;
 
-  if(EngineOpt->USE_BOOK == TRUE) {
-      t_Data->bestMv = getBookMv(t_Data->pos);
-  } else {
     IterativeDeepen(t_Data);
-  }
 
   if (t_Data->t_Num == 0) {
     if (t_Data->info->GAME_MODE == UCIMODE) {

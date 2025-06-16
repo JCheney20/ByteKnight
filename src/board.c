@@ -2,6 +2,9 @@
 #include "defs.h"
 #include "debug.h"
 
+int const phaseInc[13] = {0, 0, 1, 1, 2, 4, 0, 0, 1, 1, 2, 4, 0};
+
+
 void ResetBoard(S_BOARD *pos){
   int i;
 
@@ -18,7 +21,8 @@ void ResetBoard(S_BOARD *pos){
     pos->majPce[i] = 0;
     pos->minPce[i] = 0;
     pos->pawns[i] = 0ULL;
-    pos->material[i] = 0;
+    pos->EGmaterial[i] = 0;
+    pos->MGmaterial[i] = 0;
   }
 
   for (i = 0; i<13; ++i) {
@@ -37,6 +41,7 @@ void ResetBoard(S_BOARD *pos){
   pos->castlePerm = 0;
 
   pos->posKey = 0ULL;
+  pos->gamePhase = 0;
 
 
 }
@@ -183,7 +188,10 @@ void UpdateListMaterial(S_BOARD *pos){
       if (PieceMaj[piece] == TRUE) pos->majPce[colour]++;
       if (PieceMin[piece] == TRUE) pos->minPce[colour]++;
 
-      pos->material[colour] += PieceVal[piece];
+
+      pos->MGmaterial[colour] += mPieceVal[piece];
+      pos->EGmaterial[colour] += ePieceVal[piece];
+      pos->gamePhase += phaseInc[piece];
 
       //Piece List
       pos->pList[piece][pos->pceNum[piece]] = sq;
@@ -191,6 +199,7 @@ void UpdateListMaterial(S_BOARD *pos){
 
       if(piece==wK) pos->KingSq[WHITE] = sq;
       if(piece==bK) pos->KingSq[BLACK] = sq;
+
 
       if (piece==wP) {
         SETBIT(pos->pawns[WHITE], SQ64(sq));
@@ -210,7 +219,8 @@ int CheckBrd(const S_BOARD *pos){
   int t_bigPce[2] = { 0, 0};
   int t_majPce[2] = { 0, 0};
   int t_minPce[2] = { 0, 0};
-  int t_material[2] = { 0, 0};
+  int t_MGmaterial[2] = { 0, 0};
+  int t_EGmaterial[2] = { 0, 0};
 
   int sq64, t_piece, t_pce_num, sq120, colour, pcount;
   U64 t_pawns[3] = {0ULL, 0ULL, 0ULL};
@@ -238,7 +248,8 @@ int CheckBrd(const S_BOARD *pos){
     if (PieceMin[t_piece] == TRUE) t_minPce[colour]++;
     if (PieceMaj[t_piece] == TRUE) t_majPce[colour]++;
 
-    t_material[colour] += PieceVal[t_piece];
+    t_MGmaterial[colour] += mPieceVal[t_piece];
+    t_EGmaterial[colour] += ePieceVal[t_piece];
   }
 
   for (t_piece = wP; t_piece <= bK; ++t_piece) {
@@ -269,7 +280,8 @@ int CheckBrd(const S_BOARD *pos){
     ASSERT(pos->pieces[SQ120(sq64)] == wP || pos->pieces[SQ120(sq64)] == bP );
   }
 
-  ASSERT(t_material[WHITE] == pos->material[WHITE] && t_material[BLACK] == pos->material[BLACK]);
+  ASSERT(t_MGmaterial[WHITE] == pos->MGmaterial[WHITE] && t_MGmaterial[BLACK] == pos->MGmaterial[BLACK]);
+  ASSERT(t_EGmaterial[WHITE] == pos->EGmaterial[WHITE] && t_EGmaterial[BLACK] == pos->EGmaterial[BLACK]);
   ASSERT(t_minPce[WHITE] == pos->minPce[WHITE] && t_minPce[BLACK] == pos->minPce[BLACK]);
   ASSERT(t_majPce[WHITE] == pos->majPce[WHITE] && t_majPce[BLACK] == pos->majPce[BLACK]);
   ASSERT(t_bigPce[WHITE] == pos->bigPce[WHITE] && t_bigPce[BLACK] == pos->bigPce[BLACK]);

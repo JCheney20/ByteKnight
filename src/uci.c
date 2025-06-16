@@ -2,16 +2,14 @@
 #include "debug.h"
 #include "stdio.h"
 #include "string.h"
-#include "pthread.h"
-#include <bits/pthreadtypes.h>
 #include <stdlib.h>
 #include <time.h>
 
 #define INPUTBUFFER 400 * 6
-
-pthread_t mainSearch_t;
+pthread_t main_t;
 
 void ParseGo(char* ln, S_SEARCHINFO *info, S_BOARD *pos, S_HASHTABLE *table){
+
 
   int depth = -1, movestogo = 30, movetime = -1;
   int time = -1, inc  = 0;
@@ -70,9 +68,10 @@ void ParseGo(char* ln, S_SEARCHINFO *info, S_BOARD *pos, S_HASHTABLE *table){
   }
 
   printf("time: %d start: %d stop: %d depth: %d timeset: %d\n", time, info->start_time,info->stop_time, info->depth,info->t_set);
-  mainSearch_t = LaunchSearch_t(pos, info, table);
 
+  main_t = LaunchSearch_t(pos, info, table);
 }
+
 void ParsePos(char* lnIn, S_BOARD *pos){
 
   lnIn += 9;
@@ -142,11 +141,11 @@ void UCI_Loop(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info){
       ParseFen(START_FEN, pos);
       ParseGo("go infinite", info, pos, table);
     } else if (!strncmp(ln, "quit", 4)) {
-      JoinSearch_t(mainSearch_t, info);
       info->quit = TRUE;
+      JoinSearch_t(main_t, info);
       break;
     } else if (!strncmp(ln, "stop", 4)) {
-      JoinSearch_t(mainSearch_t, info);
+      JoinSearch_t(main_t, info);
     } else if (!strncmp(ln, "uci", 3)) {
       printf("id name %s\n", NAME);
       printf("id author Justin Cheney\n");
@@ -159,7 +158,6 @@ void UCI_Loop(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info){
       InitHashTable(table, MB);
     } else if (!strncmp(ln, "setoption name Threads value ", 29)) {			
       sscanf(ln,"%*s %*s %*s %*s %d",&threads);
-      if(threads < 2) threads = 2;
       if(threads > MAXTHREADS) threads = MAXTHREADS;
       printf("Set Num Threads to %d\n",threads);
       info->NumThreads = threads;

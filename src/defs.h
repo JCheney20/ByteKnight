@@ -25,6 +25,7 @@ typedef unsigned long long U64;
 #define AB_BOUND 30000
 #define MATE (AB_BOUND - MAXDEPTH)
 
+enum PIECETYPE {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
 enum PIECES {EMPTY, wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK};
 enum FILES {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE_NONE};
 enum RANKS {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_NONE};
@@ -112,7 +113,8 @@ typedef struct {
   int bigPce[2];
   int majPce[2];
   int minPce[2];
-  int material[2];
+  int MGmaterial[2];
+  int EGmaterial[2];
 
   S_UNDO history[MAXGAMEMOVES];
 
@@ -123,6 +125,8 @@ typedef struct {
 
   int searchHist[13][BRD_SQ_NUM];
   int searchKillers[2][MAXDEPTH];
+
+  int gamePhase;
 
 } S_BOARD; 
 
@@ -233,6 +237,8 @@ extern int PieceBig[13];
 extern int PieceMaj[13];
 extern int PieceMin[13];
 extern int PieceVal[13];
+extern int mPieceVal[13];
+extern int ePieceVal[13];
 extern int PieceCol[13];
 
 extern int PiecePawn[13];
@@ -258,6 +264,7 @@ extern S_OPTIONS EngineOpt[1];
 extern S_HASHTABLE HashTable[1];
 
 extern pthread_t tid[MAXTHREADS];
+extern const int phaseInc[13]; 
 
 // FUNCTIONS
 // init.c
@@ -328,6 +335,8 @@ extern int ProbePvMove(const S_BOARD *pos, const S_HASHTABLE *table);
 
 //eval.c
 extern int evalPos(const S_BOARD *pos);
+extern void InitPSTtable();
+extern void TestPST();
 
 //uci.c
 extern void UCI_Loop(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info);

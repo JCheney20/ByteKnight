@@ -15,14 +15,15 @@ int main(int argc, char *argv[]) {
 	S_BOARD pos[1];
   S_SEARCHINFO info[1];
   info->quit = FALSE;
-  info->NumThreads = 4;
   EngineOpt->USE_BOOK = FALSE;
+  info->NumThreads = 16;
 
   
   HashTable->pTable = NULL;
   InitHashTable(HashTable, 64);
   setbuf(stdin, NULL);
   setbuf(stdout, NULL);
+
   
   int ArgNum = 0;
     

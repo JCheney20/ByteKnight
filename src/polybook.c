@@ -22,7 +22,7 @@ const int PolyKindofPiece[13] = {
 
 void InitPolyBook(){
   EngineOpt->USE_BOOK = FALSE;
-  FILE *pFile = fopen("./Books/gm2600.bin", "rb");
+  FILE *pFile = fopen("./books/gm2600.bin", "rb");
 
   if (pFile == NULL) {
     printf("Book File Not Read\n");
@@ -180,9 +180,7 @@ int getBookMv(S_BOARD *pos){
     int randMv = rand() % count;
     return bookMv[randMv];
   } else {
-    EngineOpt->USE_BOOK = FALSE;
     return NOMOVE;
-
   }
 }
 

@@ -35,7 +35,7 @@ int NumDir[13] = {0, 0, 8, 4, 4, 8, 8, 0, 8, 4, 4, 8, 8};
 int LoopSlideIndex[2] = {0, 4};
 int LoopNonSlideIndex[2] = {0, 3};
 
-const int VicScore[13] = {0, 100, 200, 300, 400, 500, 600, 100, 200, 300, 400, 500, 600};
+const int VicScore[13] =  { 0, 100, 200, 300, 400, 500, 600, 100, 200, 300, 400, 500, 600 };
 static int MvvLvaScores[13][13];
 
 void InitMvvLva(){
@@ -70,9 +70,9 @@ void AddQuietMv( const S_BOARD *pos, int move, S_MOVELIST *list){
   list->moves[list->count].mv = move;
 
   if (pos->searchKillers[0][pos->ply] == move ) {
-    list->moves[list->count].score = 900000;
+    list->moves[list->count].score = 90000;
   } else if (pos->searchKillers[1][pos->ply] == move) {
-    list->moves[list->count].score = 800000;
+    list->moves[list->count].score = 80000;
   } else {
     list->moves[list->count].score = pos->searchHist[pos->pieces[FROMSQ(move)]][TOSQ(move)];
   }
@@ -86,7 +86,7 @@ void AddCaptureMv( const S_BOARD *pos, int mv, S_MOVELIST *list){
   ASSERT(PieceValid(CAPTURED(mv)));
 
   list->moves[list->count].mv = mv;
-  list->moves[list->count].score = MvvLvaScores[CAPTURED(mv)][pos->pieces[FROMSQ(mv)]] + 1000000;
+  list->moves[list->count].score = MvvLvaScores[CAPTURED(mv)][pos->pieces[FROMSQ(mv)]] + 10000;
   list->count++;
 }
 
