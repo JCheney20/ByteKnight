@@ -2,10 +2,7 @@
 #include "defs.h"
 #include "debug.h"
 
-//TODO: Research into PST -> ML (Automated Eval)
-/*
- */
-
+int const phaseInc[13] = {0, 0, 1, 1, 2, 4, 0, 0, 1, 1, 2, 4, 0};
 const int PawnIsolated = -10;
 const int PawnPassed[8] = {0, 5, 10, 20, 35, 60, 100, 200};
 const int RookOpenFile = 10;
@@ -17,8 +14,6 @@ const int BishopPair = 30;
 int mg_table[13][64];
 int eg_table[13][64];
 
-/* piece/sq tables */
-/* values from Rofchade: http://www.talkchess.com/forum3/viewtopic.php?f=2&t=68311&start=19 */
 // MIDDLEGAME PIECE SQUARE TABLES
 
 // Pawn PST - Middlegame
@@ -211,50 +206,6 @@ void InitPSTtable(){
     }
 }
 
-
-int get_pst_value(int piece, int square, int is_endgame) {
-    /*
-     * Get piece square table value
-     * piece: 0=pawn, 1=knight, 2=bishop, 3=rook, 4=queen, 5=king
-     * square: 0-63 (a1=0, b1=1, ..., h8=63)
-     * is_endgame: 0=middlegame, 1=endgame
-     */
-    if (is_endgame) {
-        return eg_table[piece][MIRROR64(square)];
-    } else {
-        return mg_table[piece][MIRROR64(square)];
-    }
-}
-
-void TestPST(){
-  int sq, file, rank, piece;
-
-printf("MIDDLE GAME BOARDS");CR;
-    for (int pce = PAWN; pce <=KING ; ++pce) {
-      printf("PST of: %d\n", pce);
-      for (sq = 0; sq < 64; sq++) {
-        if (sq % 8 == 0) CR;
-        int val = get_pst_value(pce+1, sq, 0);
-        printf("%d\t",val);
-      }
-  CR;
-    }
-
-
-  printf("ENDGAME BOARDS");CR;
-    for (int pce = PAWN; pce <=KING ; ++pce) {
-      printf("PST of: %d\n", pce);
-      for (sq = 0; sq < 64; sq++) {
-        if (sq % 8 == 0) CR;
-        int val = get_pst_value(pce+1, sq, 1);
-        printf("%d\t",val);
-      }
-  CR;
-    }
-
-}
-
-
 int pceAdjustments(int pce, int sq, const S_BOARD *pos){
   int score;
   switch (pce) {
@@ -311,9 +262,10 @@ int pceAdjustments(int pce, int sq, const S_BOARD *pos){
   return score;
 }
 
-int evalPos(const S_BOARD *pos){
+int evalPos(S_BOARD *pos){
   int mg[2] = {0, 0};
   int eg[2] = {0, 0};
+  int gamePhase = 0;
 
   int pce, pceNum, sq, rank, file;
 
@@ -325,6 +277,7 @@ int evalPos(const S_BOARD *pos){
     for(file = FILE_A; file <= FILE_H; file++){
       sq = FR2SQ(file, rank);
       pce = pos->pieces[sq];
+      gamePhase += phaseInc[pce];
       if (pce != EMPTY) {
         int col = pce<7? WHITE:BLACK;
         mg[col] += mg_table[pce][SQ64(sq)];
@@ -342,7 +295,7 @@ int evalPos(const S_BOARD *pos){
 
   int mgScore = mg[pos->side] - mg[(pos->side)^1];
   int egScore = eg[pos->side] - eg[(pos->side)^1];
-  int mgPhase = (pos->gamePhase > 24)? 24:pos->gamePhase;
+  int mgPhase = (gamePhase > 24)? 24:gamePhase;
   int egPhase = 24 - mgPhase;
   return ((mgScore * mgPhase) + (egScore * egPhase))/24;
 

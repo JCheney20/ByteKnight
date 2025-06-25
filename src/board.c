@@ -2,7 +2,6 @@
 #include "defs.h"
 #include "debug.h"
 
-int const phaseInc[13] = {0, 0, 1, 1, 2, 4, 0, 0, 1, 1, 2, 4, 0};
 
 
 void ResetBoard(S_BOARD *pos){
@@ -41,7 +40,6 @@ void ResetBoard(S_BOARD *pos){
   pos->castlePerm = 0;
 
   pos->posKey = 0ULL;
-  pos->gamePhase = 0;
 
 
 }
@@ -191,7 +189,6 @@ void UpdateListMaterial(S_BOARD *pos){
 
       pos->MGmaterial[colour] += mPieceVal[piece];
       pos->EGmaterial[colour] += ePieceVal[piece];
-      pos->gamePhase += phaseInc[piece];
 
       //Piece List
       pos->pList[piece][pos->pceNum[piece]] = sq;

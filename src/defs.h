@@ -63,11 +63,6 @@ typedef struct {
 
 
 typedef struct {
-/*  U64 posKey;
-  int mv;
-  int score;
-  int depth;
-  int flags;*/
   int age;
   U64 smp_key;
   U64 smp_data;
@@ -126,7 +121,6 @@ typedef struct {
   int searchHist[13][BRD_SQ_NUM];
   int searchKillers[2][MAXDEPTH];
 
-  int gamePhase;
 
 } S_BOARD; 
 
@@ -288,6 +282,7 @@ extern void MirrorBrd(S_BOARD *pos);
 
 //attacks.c
 extern int SqAttacked(const int sq, const int side, const S_BOARD *pos);
+extern int getSmallestAttacker(int sq, const S_BOARD *pos);
 
 //io.c
 extern char *PrSq(const int sq);
@@ -334,7 +329,7 @@ extern void StoreHashEntry(S_BOARD *pos, S_HASHTABLE *table, const int move, int
 extern int ProbePvMove(const S_BOARD *pos, const S_HASHTABLE *table);
 
 //eval.c
-extern int evalPos(const S_BOARD *pos);
+extern int evalPos( S_BOARD *pos);
 extern void InitPSTtable();
 extern void TestPST();
 

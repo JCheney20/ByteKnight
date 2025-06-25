@@ -165,15 +165,17 @@ static int AlphaBeta(int alpha, int beta, int depth, S_SEARCHINFO *info, S_BOARD
   Score = -AB_BOUND;
   int MvNum = 0;
   int BestScore = -AB_BOUND;
+  int PVMvFound = FALSE;
 
   if (PvMv != NOMOVE) {
   for (MvNum = 0; MvNum<list->count; ++MvNum) {
       if (list->moves[MvNum].mv == PvMv) {
         list->moves[MvNum].score = 2000000;
+        PVMvFound = TRUE;
         break;
       }
     }
-  
+    if (!PVMvFound) PvMv = NOMOVE; 
   }
 
   for (MvNum = 0; MvNum<list->count; ++MvNum) {
@@ -230,74 +232,81 @@ static int AlphaBeta(int alpha, int beta, int depth, S_SEARCHINFO *info, S_BOARD
 
 void IterativeDeepen(S_SEARCH_WORKER_DATA *t_Data){
   t_Data->bestMv = NOMOVE;
+  int lastbestMv = NOMOVE;
   int bestScore = -AB_BOUND;
   int curDepth = 0;
   int pvMoves = 0;
   int pvNum = 0;
 
-
-    for (curDepth = 1; curDepth <=t_Data->info->depth; ++curDepth) {
-      rootDepth = curDepth;
-      bestScore = AlphaBeta(-AB_BOUND, AB_BOUND, curDepth, t_Data->info, t_Data->pos, TRUE, t_Data->table_t);
-
-      if (t_Data->info->stopped == TRUE) break;
-
-      
-      if (t_Data->t_Num == 0) {
+  bestScore = AlphaBeta(-AB_BOUND, AB_BOUND, 1, t_Data->info, t_Data->pos, TRUE, t_Data->table_t);
+  if (t_Data->info->stopped != TRUE) {
+    pvMoves = GetPvLine(1, t_Data->pos, t_Data->table_t);
+      if (pvMoves > 0) {
+        lastbestMv = t_Data->pos->PvArr[0];
+        t_Data->bestMv = lastbestMv;
+      }
+  }
+    
+  for (curDepth = 2; curDepth <=t_Data->info->depth; ++curDepth) {
+    rootDepth = curDepth;
+    bestScore = AlphaBeta(-AB_BOUND, AB_BOUND, curDepth, t_Data->info, t_Data->pos, TRUE, t_Data->table_t);
+    if(t_Data->info->stopped == TRUE) {t_Data->bestMv = lastbestMv; break;}
+    if (t_Data->t_Num == 0) {
+      pvMoves = GetPvLine(curDepth, t_Data->pos, t_Data->table_t);
+      if (pvMoves > 0) {
+        lastbestMv = t_Data->pos->PvArr[0];
+        t_Data->bestMv = lastbestMv;
+      }
+      if (t_Data->info->GAME_MODE == UCIMODE) {
+        printf("info score cp %d depth %d nodes %ld time %d ",bestScore, curDepth, t_Data->info->nodes, (GetTimeMS()-t_Data->info->start_time));
+      } else if (t_Data->info->GAME_MODE == XBOARDMODE && t_Data->info->POST_THINKING == TRUE) {
+        printf("%d %d %d %ld ", curDepth, bestScore, (GetTimeMS() - t_Data->info->start_time)/10,t_Data->info->nodes);
+      } else if (t_Data->info->POST_THINKING == TRUE) {
+        printf("score:%d depth: %d nodes: %ld time: %d (ms) ",bestScore, curDepth, t_Data->info->nodes, (GetTimeMS()-t_Data->info->start_time));
+      }
+      if (t_Data->info->GAME_MODE == UCIMODE || t_Data->info->POST_THINKING == TRUE) {
         pvMoves = GetPvLine(curDepth, t_Data->pos, t_Data->table_t);
-        t_Data->bestMv = t_Data->pos->PvArr[0];
+        if (!(t_Data->info->GAME_MODE == XBOARDMODE)) printf("pv");
+        for (pvNum = 0; pvNum<pvMoves; ++pvNum) {
+          printf(" %s", PrMv(t_Data->pos->PvArr[pvNum]));
+        }
+        CR;
+      }
 
-        if (t_Data->info->GAME_MODE == UCIMODE) {
-          printf("info score cp %d depth %d nodes %ld time %d ",bestScore, curDepth, t_Data->info->nodes, (GetTimeMS()-t_Data->info->start_time));
-        } else if (t_Data->info->GAME_MODE == XBOARDMODE && t_Data->info->POST_THINKING == TRUE) {
-          printf("%d %d %d %ld ", curDepth, bestScore, (GetTimeMS() - t_Data->info->start_time)/10,t_Data->info->nodes);
-        } else if (t_Data->info->POST_THINKING == TRUE) {
-          printf("score:%d depth: %d nodes: %ld time: %d (ms) ",bestScore, curDepth, t_Data->info->nodes, (GetTimeMS()-t_Data->info->start_time));
-        }
-        if (t_Data->info->GAME_MODE == UCIMODE || t_Data->info->POST_THINKING == TRUE) {
-          pvMoves = GetPvLine(curDepth, t_Data->pos, t_Data->table_t);
-          if (!(t_Data->info->GAME_MODE == XBOARDMODE)) printf("pv");
-          for (pvNum = 0; pvNum<pvMoves; ++pvNum) {
-            printf(" %s", PrMv(t_Data->pos->PvArr[pvNum]));
+    }
+
+  }
+
+  if (t_Data->bestMv == NOMOVE || !MoveExists(t_Data->pos, t_Data->bestMv)) {
+    t_Data->bestMv = ProbePvMove(t_Data->pos, t_Data->table_t);
+    if (t_Data->bestMv == NOMOVE || !MoveExists(t_Data->pos, t_Data->bestMv)) {
+      S_MOVELIST list[1];
+      GenerateAllMvs(t_Data->pos, list);
+
+      int bestMvScore = -INF;
+      for (int i = 0; i<list->count; i++) {
+        if (makeMv(t_Data->pos, list->moves[i].mv)) {
+          takeMv(t_Data->pos);
+          if (list->moves[i].score > bestMvScore) {
+            bestMvScore = list->moves[i].score;
+            t_Data->bestMv = list->moves[i].mv;
           }
-          CR;
         }
-        
       }
     }
-  
+  }
 }
+  
+  
 
 void SearchPosition(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info){
   ClearForSearch(pos, info, table);
 
   int bestMv = NOMOVE;
 
-  if(EngineOpt->USE_BOOK == TRUE) {
-      bestMv = getBookMv(pos);
-      if (bestMv != NOMOVE) {
-        if (info->GAME_MODE == UCIMODE) {
-          printf("bestmove %s\n", PrMv(bestMv));
-        } else if (info->GAME_MODE == XBOARDMODE) {
-          printf("move %s\n", PrMv(bestMv));
-          makeMv(pos, bestMv);
-        } else {
-          CR;CR;
-          printf("===** %s makes move %s **===", NAME, PrMv(bestMv));
-          CR;CR;
-          makeMv(pos, bestMv);
-          PrintBoard(pos);
-        }
-    }
-  }
-
-  if (bestMv == NOMOVE) {
-    creatSearch_t(pos, table, info);
-  }
+  creatSearch_t(pos, table, info);
 
   for (int i =0; i < info->NumThreads; i++) {
     pthread_join(tid[i], NULL);
   }
-
-
 }

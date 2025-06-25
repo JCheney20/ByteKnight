@@ -1,10 +1,9 @@
-#include "stdio.h"
 #include "defs.h"
 #include "debug.h"
 
 #define MOVE(f, t, ca, pro, fl) ( (f) | ((t) << 7) | ((ca) << 14) | ((pro) << 20) | (fl))
 #define SQOFFBOARD(sq) (FilesBrd[sq] == NO_SQ)
-
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 //Big Piece Arrays
 int LoopSlidePce[8] = {
@@ -44,7 +43,7 @@ void InitMvvLva(){
 
   for (Attacker = wP; Attacker <= bK; ++Attacker) {
     for (Vic = wP; Vic<=bK; ++Vic) {
-      MvvLvaScores[Vic][Attacker] = VicScore[Vic] + 6 - (VicScore[Attacker] / 100);
+      MvvLvaScores[Vic][Attacker] = VicScore[Vic] * 10 - VicScore[Attacker] ;
     }
   }
 }
@@ -70,13 +69,26 @@ void AddQuietMv( const S_BOARD *pos, int move, S_MOVELIST *list){
   list->moves[list->count].mv = move;
 
   if (pos->searchKillers[0][pos->ply] == move ) {
-    list->moves[list->count].score = 90000;
+    list->moves[list->count].score = 900000;
   } else if (pos->searchKillers[1][pos->ply] == move) {
-    list->moves[list->count].score = 80000;
+    list->moves[list->count].score = 800000;
   } else {
     list->moves[list->count].score = pos->searchHist[pos->pieces[FROMSQ(move)]][TOSQ(move)];
   }
   list->count++;
+}
+
+
+int SEE(S_BOARD *pos, int mv, int side){
+  int val = 0;
+  int Attpce = getSmallestAttacker(TOSQ(mv), pos);
+  int Vicpce = pos->pieces[TOSQ(mv)];
+  if (Attpce != EMPTY) {
+    makeMv(pos, mv);
+    val = MAX(0, CAPTURED(mv)-SEE(pos, mv, side^1));
+    takeMv(pos);
+  }
+  return val;
 }
 
 void AddCaptureMv( const S_BOARD *pos, int mv, S_MOVELIST *list){

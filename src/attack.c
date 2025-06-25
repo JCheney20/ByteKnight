@@ -80,3 +80,83 @@ int SqAttacked(const int sq, const int side, const S_BOARD *pos){
   return FALSE;
 }
 
+int getSmallestAttacker(int sq, const S_BOARD *pos){
+
+  int pce,i,t_sq,dir;
+  int side = pos->side;
+
+  ASSERT(SqOnBoard(sq));
+  ASSERT(SideValid(side));
+  ASSERT(CheckBrd(pos));
+
+  //pawns
+  if (side == WHITE) {
+    if(pos->pieces[sq-11] == wP) return pos->pieces[sq-11];
+    if(pos->pieces[sq-9] == wP) return pos->pieces[sq-9];
+  } else {
+    if(pos->pieces[sq+11] == bP) return pos->pieces[sq+11];
+    if(pos->pieces[sq+9] == bP) return pos->pieces[sq+9];
+  }
+
+  //knights
+  for (i = 0;i<8;++i) {
+    pce = pos->pieces[sq + KnDir[i]];
+    ASSERT(PieceValidEmpty(pce));
+    if(pce!=NO_SQ && isKn(pce) && PieceCol[pce]==side ) return pce;
+  }
+
+
+  //bishops, queens
+  for (i = 0; i < 4; ++i) {
+    dir = BiDir[i];
+    t_sq = sq + dir;
+    pce = pos->pieces[t_sq];
+
+    while (pce != NO_SQ) {
+      if (pce != EMPTY) {
+        if (isBQ(pce) && !isRQ(pce) && PieceCol[pce] == side) {
+          return pce;
+        }
+        break;
+      }
+      t_sq += dir;
+      pce = pos->pieces[t_sq];
+    }
+  }
+  
+  //rooks, queens
+  for (i = 0; i < 4; ++i) {
+    dir = RkDir[i];
+    t_sq = sq + dir;
+    pce = pos->pieces[t_sq];
+    ASSERT(PieceValidEmpty(pce));
+    while (pce != NO_SQ) {
+      if (pce != EMPTY) {
+        if (isRQ(pce) && !isBQ(pce) && PieceCol[pce] == side) {
+          return pce;
+        }
+        break;
+      }
+      t_sq += dir;
+      pce = pos->pieces[t_sq];
+    }
+  }
+
+  if (isBQ(pce) && isRQ(pce) && PieceCol[pce] == side) {
+    return pce;
+  }
+
+  //kings
+  for (i = 0; i < 8; ++i) {
+    pce = pos->pieces[sq + KiDir[i]];
+    if(pce != NO_SQ && isKi(pce) && PieceCol[pce] == side){
+      return pce;
+    }
+  }
+
+  return EMPTY;
+}
+
+
+
+

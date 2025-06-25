@@ -34,12 +34,7 @@ S_HASHTABLE HashTable[1];
 void ClearHashTable(S_HASHTABLE *table){
   S_HASHENTRY *tableEntry;
   for (tableEntry = table->pTable; tableEntry < table->pTable + table->numEntries; tableEntry++) {
-  /*  tableEntry->posKey = 0ULL;
-    tableEntry->mv = NOMOVE;
-    tableEntry->depth = 0;
-    tableEntry->score = 0;
-    tableEntry->flags = 0;*/
-    tableEntry->age = 0;
+   tableEntry->age = 0;
     tableEntry->smp_data = 0ULL;
     tableEntry->smp_key = 0ULL;
   }
@@ -77,12 +72,18 @@ int ProbeHashEntry(S_BOARD *pos, S_HASHTABLE *table, int *move, int *score, int 
 	
     U64 t_key = pos->posKey ^ table->pTable[i].smp_data;
 
-  if (table->pTable[i].smp_key == t_key) {
+  if (table->pTable[i].smp_key == t_key && table->pTable[i].smp_key != 0) {
 
     int smp_depth = EXTRACT_DEPTH(table->pTable[i].smp_data);
     int smp_move = EXTRACT_MOVE(table->pTable[i].smp_data);
     int smp_flags = EXTRACT_FLAGS(table->pTable[i].smp_data);
     int smp_score = EXTRACT_SCORE(table->pTable[i].smp_data);
+
+    if (smp_move != NOMOVE && !MoveExists(pos, smp_move)) {
+      table->pTable[i].smp_key = 0;
+      table->pTable[i].smp_data = 0;
+      return FALSE;
+    }
     
     *move = smp_move;
     if (smp_depth>=depth) {

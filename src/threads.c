@@ -37,8 +37,12 @@ void* SearchPos_t(void *data){
 
 void* start_t(void *data){
   S_SEARCH_WORKER_DATA *t_Data = (S_SEARCH_WORKER_DATA *)data;
-
+  
+  if(EngineOpt->USE_BOOK == TRUE) {
+      t_Data->bestMv = getBookMv(t_Data->pos);
+  } else {
     IterativeDeepen(t_Data);
+  }
 
   if (t_Data->t_Num == 0) {
     if (t_Data->info->GAME_MODE == UCIMODE) {
@@ -64,6 +68,7 @@ void setUp_t(int t_Num, pthread_t *tid, S_BOARD *pos, S_SEARCHINFO *info, S_HASH
   pt_Data->pos = malloc(sizeof(S_BOARD));
   memcpy(pt_Data->pos, pos, sizeof(S_BOARD));
   pt_Data->info = info;
+
   pt_Data->table_t = table;
   pt_Data->t_Num = t_Num;
   pthread_create(tid, NULL, start_t, (void *)pt_Data);
@@ -75,5 +80,4 @@ void creatSearch_t(S_BOARD *pos, S_HASHTABLE *table, S_SEARCHINFO *info){
     setUp_t(i, &tid[i], pos, info, table);
   }
 }
-
 
